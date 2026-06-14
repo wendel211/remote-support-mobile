@@ -1,6 +1,7 @@
 export {
   generateSessionCode,
   createSession,
+  registerAttendantPresence,
   joinSession,
   updateSessionStatus,
   listenToSession,

@@ -5,7 +5,7 @@ import { AppProvider } from '@app/providers';
 import { RootNavigator } from '@navigation/index';
 import './global.css';
 
-// Inicializa o Firebase na importação
+// Inicializa o Firebase na importação.
 import '@services/firebase';
 
 export default function App(): React.JSX.Element {

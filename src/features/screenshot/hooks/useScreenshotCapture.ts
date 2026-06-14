@@ -26,7 +26,7 @@ export function useScreenshotCapture(sessionCode: string) {
     }
 
     if (!viewRef.current) {
-      const message = 'Referencia de captura nao esta disponivel.';
+      const message = 'Referência de captura não está disponível.';
       dispatch(setError(message));
       await sendScreenshotError(sessionCode, message);
       return;
@@ -83,9 +83,9 @@ export function useScreenshotCapture(sessionCode: string) {
 
       if (
         request &&
-        request.base64 === null &&
-        request.sentAt === null &&
-        request.error === null &&
+        request.base64 == null &&
+        request.sentAt == null &&
+        request.error == null &&
         request.requestedAt !== lastHandledRequestRef.current
       ) {
         lastHandledRequestRef.current = request.requestedAt;

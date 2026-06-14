@@ -1,5 +1,6 @@
 import React, { useRef, useState, useCallback } from 'react';
 import { ActivityIndicator, Animated } from 'react-native';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { WebView } from 'react-native-webview';
 import type {
   WebViewProgressEvent,
@@ -76,14 +77,17 @@ export function WebViewScreen({ route, navigation }: Props): React.JSX.Element {
 
   return (
     <Box className="flex-1 bg-surface">
-      <HStack className="border-b border-border bg-surface px-4 pb-3 pt-14">
+      <HStack className="items-center border-b border-border bg-surface px-4 pb-3 pt-14">
         <Button
           className="min-w-[72px] px-0"
           variant="ghost"
           onPress={() => navigation.goBack()}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <ButtonText variant="ghost">← Voltar</ButtonText>
+          <HStack className="items-center" space="xs">
+            <MaterialCommunityIcons name="arrow-left" size={18} color="#315DFF" />
+            <ButtonText variant="ghost">Voltar</ButtonText>
+          </HStack>
         </Button>
 
         <Text className="flex-1 text-center" numberOfLines={1} weight="semibold">
@@ -127,7 +131,7 @@ export function WebViewScreen({ route, navigation }: Props): React.JSX.Element {
       {hasError && (
         <Box className="flex-1 items-center justify-center px-8">
           <VStack className="items-center" space="md">
-            <Text className="text-5xl">⚠️</Text>
+            <MaterialCommunityIcons name="alert-circle-outline" size={48} color="#DC2626" />
             <Text className="text-center" size="lg" weight="bold">
               Não foi possível carregar
             </Text>

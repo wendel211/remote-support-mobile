@@ -8,6 +8,7 @@ import {
   type View,
 } from 'react-native';
 import { cn } from './utils';
+import { getPoppinsTextStyle } from './typography';
 
 type ButtonVariant = 'solid' | 'outline' | 'ghost';
 type ButtonTone = 'primary' | 'secondary' | 'danger' | 'success';
@@ -122,6 +123,7 @@ export const ButtonText = React.forwardRef<Text, ButtonTextProps>(
       variant = 'solid',
       tone = 'primary',
       size = 'md',
+      style,
       ...props
     },
     ref,
@@ -135,9 +137,9 @@ export const ButtonText = React.forwardRef<Text, ButtonTextProps>(
         className,
       )}
       {...props}
+      style={[getPoppinsTextStyle('semibold'), style]}
     />
   ),
 );
 
 ButtonText.displayName = 'ButtonText';
-

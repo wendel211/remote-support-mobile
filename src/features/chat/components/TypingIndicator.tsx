@@ -9,8 +9,8 @@ interface TypingIndicatorProps {
 }
 
 const ROLE_LABELS: Record<MessageRole, string> = {
-  attendant: 'Atendente esta digitando...',
-  client: 'Cliente esta digitando...',
+  attendant: 'Atendente está digitando...',
+  client: 'Cliente está digitando...',
   system: '',
 };
 

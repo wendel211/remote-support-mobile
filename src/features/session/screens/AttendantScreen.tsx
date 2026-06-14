@@ -8,6 +8,7 @@ import { useAppDispatch, useAppSelector } from '@store/hooks';
 import {
   generateSessionCode,
   createSession,
+  registerAttendantPresence,
   listenToSession,
   endSession,
 } from '@features/session/services';
@@ -95,7 +96,7 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
     } catch (err: unknown) {
       dispatch(setIsSending(false));
       const errorMessage =
-        err instanceof Error ? err.message : 'Erro ao solicitar screenshot';
+        err instanceof Error ? err.message : 'Erro ao solicitar a captura de tela.';
       dispatch(setError(errorMessage));
     }
   }, [sessionCode, dispatch]);
@@ -115,7 +116,7 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
         return;
       }
 
-      if (request && request.sentAt !== null && request.base64) {
+      if (request && request.sentAt != null && request.base64) {
         dispatch(setLastScreenshot(request.base64));
         dispatch(setIsSending(false));
         void clearScreenshotRequest(sessionCode);
@@ -163,6 +164,7 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
     try {
       dispatch(clearScreenshot());
       await createSession(code);
+      await registerAttendantPresence(code);
 
       dispatch(setRole('attendant'));
       dispatch(
@@ -197,7 +199,7 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
       );
     } catch (err: unknown) {
       const message =
-        err instanceof Error ? err.message : 'Erro ao criar sessao.';
+        err instanceof Error ? err.message : 'Erro ao criar a sessão.';
       setInitError(message);
       setCurrentStatus('idle');
     } finally {
@@ -213,7 +215,7 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
         unsubscribeRef.current();
         unsubscribeRef.current = null;
       }
-      // Encerrar a sessão no Firebase ao desmontar o componente usando os refs atualizados
+      // Encerra a sessão no Firebase ao desmontar o componente usando os refs atualizados.
       if (
         sessionCodeRef.current &&
         currentStatusRef.current !== 'idle' &&
@@ -276,7 +278,7 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
       <Box className="flex-1 items-center justify-center bg-[#F3F4F6] px-8">
         <ActivityIndicator size="large" color="#2563EB" />
         <Text className="mt-4 text-[14px] text-[#64748B]">
-          Criando sessao...
+          Criando sessão...
         </Text>
       </Box>
     );
@@ -298,7 +300,7 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
             </Box>
             <VStack className="items-center" space="xs">
               <Text className="text-[25px] leading-[30px] text-black" weight="bold">
-                Nao foi possivel criar a sessao
+                Não foi possível criar a sessão
               </Text>
               <Text className="max-w-[270px] text-center text-[13px] leading-[19px] text-[#64748B]">
                 {initError}
@@ -355,7 +357,7 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
                 <StatusBadge status={currentStatus} />
               </HStack>
             </HStack>
-  
+
             <HStack className="justify-center rounded-xl bg-[#ECFDF5] py-2" space="xs">
               <ConnectedIcon />
               <Text className="text-[12px] leading-4 text-[#059669]" weight="semibold">
@@ -364,104 +366,104 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
             </HStack>
           </VStack>
 
-        {!isKeyboardVisible && (
-          <>
-            <Box className="border-y border-[#E2E8F0] bg-white px-4 py-3">
-              <ScreenshotButton
-                onPress={() => void handleRequestScreenshot()}
-                isLoading={isSending}
+          {!isKeyboardVisible && (
+            <>
+              <Box className="border-y border-[#E2E8F0] bg-white px-4 py-3">
+                <ScreenshotButton
+                  onPress={() => void handleRequestScreenshot()}
+                  isLoading={isSending}
+                />
+                {screenshotError ? (
+                  <Box className="mt-3 rounded-xl border border-red-100 bg-danger-50 px-4 py-3">
+                    <Text className="text-center text-[12px]" tone="danger" weight="medium">
+                      {screenshotError}
+                    </Text>
+                  </Box>
+                ) : null}
+              </Box>
+
+              <Box className="border-b border-[#E2E8F0] bg-white px-4 py-3">
+                <VStack space="sm">
+                  <HStack className="items-center justify-between">
+                    <Text className="text-[12px] uppercase tracking-[1px] text-[#64748B]" weight="bold">
+                      WebView do atendente
+                    </Text>
+                    <Text className="text-[12px] text-[#64748B]">
+                      Local
+                    </Text>
+                  </HStack>
+
+                  <HStack className="items-center" space="sm">
+                    <Input
+                      className="flex-1"
+                      value={supportUrl}
+                      onChangeText={setSupportUrl}
+                      placeholder="https://exemplo.com"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      keyboardType="url"
+                    />
+                    <Button
+                      className="min-h-11 px-4"
+                      disabled={supportUrl.trim().length === 0}
+                      onPress={handleOpenSupportUrl}
+                    >
+                      <HStack className="items-center justify-center" space="xs">
+                        <MaterialCommunityIcons name="open-in-app" size={17} color="#FFFFFF" />
+                        <ButtonText size="sm">Abrir</ButtonText>
+                      </HStack>
+                    </Button>
+                  </HStack>
+                </VStack>
+              </Box>
+
+              <CommandPicker
+                sessionCode={sessionCode}
+                onSend={(cmd) => {
+                  void (async () => {
+                    const id = await sendCommand(sessionCode, cmd);
+                    dispatch(
+                      addSentCommand({
+                        ...cmd,
+                        id,
+                        sentAt: Date.now(),
+                        acknowledgedAt: null,
+                      } as Command),
+                    );
+                  })();
+                }}
               />
-              {screenshotError ? (
-                <Box className="mt-3 rounded-xl border border-red-100 bg-danger-50 px-4 py-3">
-                  <Text className="text-center text-[12px]" tone="danger" weight="medium">
-                    {screenshotError}
-                  </Text>
-                </Box>
-              ) : null}
-            </Box>
+            </>
+          )}
 
-            <Box className="border-b border-[#E2E8F0] bg-white px-4 py-3">
-              <VStack space="sm">
-                <HStack className="items-center justify-between">
-                  <Text className="text-[12px] uppercase tracking-[1px] text-[#64748B]" weight="bold">
-                    WebView do atendente
-                  </Text>
-                  <Text className="text-[12px] text-[#64748B]">
-                    Local
-                  </Text>
-                </HStack>
+          <ChatScreen sessionCode={sessionCode} currentRole="attendant" />
 
-                <HStack className="items-center" space="sm">
-                  <Input
-                    className="flex-1"
-                    value={supportUrl}
-                    onChangeText={setSupportUrl}
-                    placeholder="https://exemplo.com"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    keyboardType="url"
-                  />
-                  <Button
-                    className="min-h-11 px-4"
-                    disabled={supportUrl.trim().length === 0}
-                    onPress={handleOpenSupportUrl}
-                  >
-                    <HStack className="items-center justify-center" space="xs">
-                      <MaterialCommunityIcons name="open-in-app" size={17} color="#FFFFFF" />
-                      <ButtonText size="sm">Abrir</ButtonText>
-                    </HStack>
-                  </Button>
-                </HStack>
-              </VStack>
-            </Box>
-
-            <CommandPicker
-              sessionCode={sessionCode}
-              onSend={(cmd) => {
-                void (async () => {
-                  const id = await sendCommand(sessionCode, cmd);
-                  dispatch(
-                    addSentCommand({
-                      ...cmd,
-                      id,
-                      sentAt: Date.now(),
-                      acknowledgedAt: null,
-                    } as Command),
-                  );
-                })();
-              }}
-            />
-          </>
-        )}
-
-        <ChatScreen sessionCode={sessionCode} currentRole="attendant" />
-
-        {!isKeyboardVisible && (
-          <Box 
-            className="bg-white px-4 pt-3"
-            style={{ paddingBottom: Math.max(insets.bottom, 12) }}
-          >
-            <Button
-              className="min-h-12 w-full"
-              tone="danger"
-              onPress={() => void handleEndSession()}
+          {!isKeyboardVisible && (
+            <Box
+              className="bg-white px-4 pt-3"
+              style={{ paddingBottom: Math.max(insets.bottom, 12) }}
             >
-              <HStack className="items-center justify-center" space="sm">
-                <MaterialCommunityIcons name="power" size={18} color="#FFFFFF" />
-                <ButtonText tone="danger">Encerrar sessão</ButtonText>
-              </HStack>
-            </Button>
-          </Box>
-        )}
+              <Button
+                className="min-h-12 w-full"
+                tone="danger"
+                onPress={() => void handleEndSession()}
+              >
+                <HStack className="items-center justify-center" space="sm">
+                  <MaterialCommunityIcons name="power" size={18} color="#FFFFFF" />
+                  <ButtonText tone="danger">Encerrar sessão</ButtonText>
+                </HStack>
+              </Button>
+            </Box>
+          )}
 
-        <ScreenshotViewer
-          base64={lastScreenshot}
-          onClose={() => dispatch(setLastScreenshot(null))}
-        />
-      </Box>
-    </KeyboardAvoidingView>
-  );
-}
+          <ScreenshotViewer
+            base64={lastScreenshot}
+            onClose={() => dispatch(setLastScreenshot(null))}
+          />
+        </Box>
+      </KeyboardAvoidingView>
+    );
+  }
 
   return (
     <Box
@@ -481,8 +483,7 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
               Painel do atendente
             </Text>
             <Text className="max-w-[250px] text-center text-[13px] leading-[19px] text-[#64748B]">
-              Compartilhe o codigo abaixo e aguarde o cliente autorizar a
-              conexao.
+              O cliente usa este código para entrar no atendimento.
             </Text>
           </VStack>
         </VStack>
@@ -490,13 +491,13 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
         <Box className="rounded-2xl border border-[#E2E8F0] bg-white px-5 py-6 shadow-sm">
           <VStack className="items-center" space="md">
             <Text className="text-[12px] leading-4 text-[#64748B]" weight="semibold">
-              Codigo da sessao
+              Código da sessão
             </Text>
             <Text className="text-[38px] leading-[44px] tracking-[7px] text-[#2563EB]" weight="bold">
               {sessionCode}
             </Text>
             <Text className="text-center text-[12px] leading-[17px] text-[#64748B]">
-              O cliente usa este codigo para entrar no atendimento.
+              O cliente usa este código para entrar no atendimento.
             </Text>
           </VStack>
         </Box>
@@ -510,7 +511,7 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
               space="sm"
             >
               <Text className="text-[13px] text-danger-600" weight="semibold">
-                Sessao encerrada
+                Sessão encerrada
               </Text>
             </HStack>
           )}
@@ -520,7 +521,7 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
             tone="danger"
             onPress={() => void handleEndSession()}
           >
-            <ButtonText tone="danger">Encerrar sessao</ButtonText>
+            <ButtonText tone="danger">Encerrar sessão</ButtonText>
           </Button>
         </VStack>
       </VStack>

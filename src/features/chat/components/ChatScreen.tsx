@@ -155,7 +155,7 @@ export function ChatScreen({
                     </Box>
                     <VStack space="xs" className="flex-1">
                       <Text className="text-[15px] text-[#0F172A]" weight="bold">
-                        Screenshot solicitado
+                        Captura solicitada
                       </Text>
                       <Text className="text-[13px] text-[#64748B]">
                         {currentRole === 'client'

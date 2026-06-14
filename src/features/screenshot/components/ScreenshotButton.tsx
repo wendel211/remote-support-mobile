@@ -21,7 +21,7 @@ export function ScreenshotButton({
           <MaterialCommunityIcons name="camera" size={18} color="#FFFFFF" />
         )}
         <ButtonText size="sm">
-          {isLoading ? 'Solicitando...' : 'Solicitar captura do app'}
+          {isLoading ? 'Solicitando...' : 'Solicitar captura da tela do app'}
         </ButtonText>
       </HStack>
     </Button>

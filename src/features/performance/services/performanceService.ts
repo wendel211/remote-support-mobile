@@ -139,6 +139,9 @@ export function generateReport(
     averageJSHeapMB,
     peakJSHeapMB,
     componentRenderTimes,
+    frameSampleCount: frameMetrics.length,
+    memorySampleCount: memoryMetrics.length,
+    renderSampleCount: renderMetrics.length,
     generatedAt: Date.now(),
   };
 }
@@ -146,31 +149,65 @@ export function generateReport(
 export function printReport(report: PerformanceReport): void {
   const durationSec = (report.sessionDurationMs / 1000).toFixed(1);
   const isoDate = new Date(report.generatedAt).toISOString();
+  const hasMemoryData = report.memorySampleCount > 0 && report.peakJSHeapMB > 0;
+  const fpsStatus =
+    report.averageFPS >= 55 ? 'BOM' : report.averageFPS >= 45 ? 'ATENÇÃO' : 'BAIXO';
+  const memoryStatus = hasMemoryData ? 'DISPONÍVEL' : 'INDISPONÍVEL NESTE RUNTIME';
 
-  console.group(
-    '╔══════════════════════════════════════╗\n║     PERFORMANCE REPORT — SESSION     ║\n╚══════════════════════════════════════╝',
-  );
-  console.log(`Session Code: ${report.sessionCode}`);
-  console.log(`Duration: ${durationSec}s`);
-  console.log('── FPS ──');
-  console.log(
-    `Average: ${report.averageFPS} | Min: ${report.minFPS} | Max: ${report.maxFPS}`,
-  );
-  console.log('── JS HEAP ──');
-  console.log(
-    `Average: ${report.averageJSHeapMB} MB | Peak: ${report.peakJSHeapMB} MB`,
-  );
-  console.log('── RENDER TIMES ──');
+  console.group('RELATÓRIO DE PERFORMANCE - SESSÃO DE SUPORTE');
+  console.log('Sessão finalizada. Métricas coletadas durante o fluxo ativo de suporte.');
+  console.table([
+    { Métrica: 'Código da sessão', Valor: report.sessionCode },
+    { Métrica: 'Duração', Valor: `${durationSec}s` },
+    { Métrica: 'Gerado em', Valor: isoDate },
+  ]);
 
-  const renderTableData = Object.entries(report.componentRenderTimes).map(
-    ([name, stats]) => ({
-      'Component Name': name,
-      'Average (ms)': stats.average,
-      'Render Count': stats.count,
-    }),
-  );
-  console.table(renderTableData);
+  console.log('RESUMO DO RUNTIME');
+  console.table([
+    {
+      Área: 'FPS',
+      Média: report.averageFPS,
+      Min: report.minFPS,
+      Max: report.maxFPS,
+      Amostras: report.frameSampleCount,
+      Status: fpsStatus,
+    },
+    {
+      Área: 'JS Heap',
+      Média: `${report.averageJSHeapMB} MB`,
+      Pico: `${report.peakJSHeapMB} MB`,
+      Amostras: report.memorySampleCount,
+      Status: memoryStatus,
+    },
+    {
+      Área: 'Renderizações',
+      Média: '-',
+      Pico: '-',
+      Amostras: report.renderSampleCount,
+      Status: report.renderSampleCount > 0 ? 'DISPONÍVEL' : 'SEM AMOSTRAS',
+    },
+  ]);
 
-  console.log(`Generated at: ${isoDate}`);
+  console.log('TEMPOS DE RENDERIZAÇÃO POR COMPONENTE');
+  const renderTableData = Object.entries(report.componentRenderTimes)
+    .map(([name, stats]) => ({
+      Componente: name,
+      'Render médio (ms)': stats.average,
+      'Quantidade de renders': stats.count,
+    }))
+    .sort((a, b) => b['Render médio (ms)'] - a['Render médio (ms)']);
+
+  if (renderTableData.length > 0) {
+    console.table(renderTableData);
+  } else {
+    console.log('Nenhuma métrica de renderização por componente foi coletada.');
+  }
+
+  if (!hasMemoryData) {
+    console.log(
+      'Observação: as métricas de JS heap dependem de performance.memory e podem ficar indisponíveis em runtimes React Native.',
+    );
+  }
+
   console.groupEnd();
 }

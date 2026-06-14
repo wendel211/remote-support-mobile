@@ -50,11 +50,11 @@ export function RoleSelectionScreen({ navigation }: Props): React.JSX.Element {
 
           <VStack space="sm">
             <Text className="text-[25px] leading-[29px] text-black" weight="bold">
-              Selecione o seu perfil
+              Escolha o seu perfil
             </Text>
             <Text className="max-w-[260px] text-[13px] leading-[20px] text-[#64748B]">
-              Conecte atendente e cliente em uma sessao segura com chat,
-              screenshot e comandos remotos.
+              Conecte sendo atendente ou cliente em uma sessão segura com chat,
+              captura de tela e comandos remotos.
             </Text>
           </VStack>
         </VStack>
@@ -64,7 +64,7 @@ export function RoleSelectionScreen({ navigation }: Props): React.JSX.Element {
             icon={<AttendantIcon />}
             iconClassName="bg-[#F1F5F9]"
             title="Sou atendente"
-            description="Vou gerar um codigo de sessao para prestar suporte remoto."
+            description="Vou gerar um código de sessão para prestar suporte remoto."
             onPress={() => navigation.navigate('Attendant')}
           />
 
@@ -72,7 +72,7 @@ export function RoleSelectionScreen({ navigation }: Props): React.JSX.Element {
             icon={<ClientIcon />}
             iconClassName="bg-[#F8FAFC]"
             title="Sou cliente"
-            description="Tenho um codigo e preciso receber assistencia tecnica."
+            description="Tenho um código e preciso receber assistência técnica."
             onPress={() => navigation.navigate('Client')}
           />
         </VStack>
@@ -83,8 +83,8 @@ export function RoleSelectionScreen({ navigation }: Props): React.JSX.Element {
             <Text className="text-[10px] text-[#475569]" weight="bold">
               Como funciona:
             </Text>{' '}
-            O atendente inicia uma sessao e compartilha um codigo seguro. O
-            cliente insere este codigo para autorizar a conexao e iniciar o
+            O atendente inicia uma sessão e compartilha um código seguro. O
+            cliente insere este código para autorizar a conexão e iniciar o
             suporte.
           </Text>
         </HStack>

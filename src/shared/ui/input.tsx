@@ -1,13 +1,14 @@
 import React from 'react';
 import { TextInput, type TextInputProps } from 'react-native';
 import { cn } from './utils';
+import { getPoppinsTextStyle } from './typography';
 
 export interface InputProps extends TextInputProps {
   className?: string;
 }
 
 export const Input = React.forwardRef<TextInput, InputProps>(
-  ({ className, placeholderTextColor = '#98A2B3', ...props }, ref) => (
+  ({ className, placeholderTextColor = '#98A2B3', style, ...props }, ref) => (
     <TextInput
       ref={ref}
       placeholderTextColor={placeholderTextColor}
@@ -17,9 +18,9 @@ export const Input = React.forwardRef<TextInput, InputProps>(
         className,
       )}
       {...props}
+      style={[getPoppinsTextStyle('regular'), style]}
     />
   ),
 );
 
 Input.displayName = 'Input';
-

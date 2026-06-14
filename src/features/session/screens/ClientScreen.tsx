@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { ActivityIndicator, Linking, Modal, Keyboard, KeyboardAvoidingView, Platform } from 'react-native';
+import { Linking, Modal, Keyboard, KeyboardAvoidingView, Platform } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -72,7 +72,7 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
 
   const handleJoinSession = useCallback(async () => {
     if (code.length !== 6) {
-      dispatch(setError('O codigo deve ter 6 caracteres.'));
+      dispatch(setError('O código deve ter 6 caracteres.'));
       return;
     }
 
@@ -109,7 +109,7 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
       );
     } catch (err: unknown) {
       const message =
-        err instanceof Error ? err.message : 'Erro ao entrar na sessao.';
+        err instanceof Error ? err.message : 'Erro ao entrar na sessão.';
       dispatch(setError(message));
     } finally {
       setIsLoading(false);
@@ -223,7 +223,7 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
                 className="text-center text-[12px] text-warning-500"
                 weight="semibold"
               >
-                Enviando screenshot...
+                Enviando captura de tela...
               </Text>
             </Box>
           )}
@@ -295,7 +295,7 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
 
                 <VStack className="items-center" space="xs">
                   <Text className="text-center text-[20px] leading-[26px] text-[#0F172A]" weight="bold">
-                    Sessão Encerrada
+                    Sessão encerrada
                   </Text>
                   <Text className="text-center text-[13px] leading-[19px] text-[#64748B]">
                     O atendimento foi encerrado pelo atendente.
@@ -329,10 +329,10 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
           </Box>
           <VStack className="items-center" space="xs">
             <Text className="text-[25px] leading-[30px] text-black" weight="bold">
-              Entrar na sessao
+              Entrar na sessão
             </Text>
             <Text className="max-w-[255px] text-center text-[13px] leading-[19px] text-[#64748B]">
-              Digite o codigo de 6 caracteres fornecido pelo atendente.
+              Digite o código de 6 caracteres fornecido pelo atendente.
             </Text>
           </VStack>
         </VStack>
@@ -343,7 +343,7 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
               className="min-h-[66px] text-center text-[25px] font-bold tracking-[8px]"
               value={code}
               onChangeText={handleCodeChange}
-              placeholder="CODIGO"
+              placeholder="CÓDIGO"
               maxLength={6}
               autoCapitalize="characters"
               autoCorrect={false}
@@ -364,7 +364,7 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
               disabled={isLoading || code.length !== 6}
               onPress={() => void handleJoinSession()}
             >
-              <ButtonText>Entrar na sessao</ButtonText>
+              <ButtonText>Entrar na sessão</ButtonText>
             </Button>
 
             <Button
@@ -396,7 +396,7 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
 
               <VStack className="items-center" space="xs">
                 <Text className="text-center text-[20px] leading-[26px] text-[#0F172A]" weight="bold">
-                  Sessão Encerrada
+                  Sessão encerrada
                 </Text>
                 <Text className="text-center text-[13px] leading-[19px] text-[#64748B]">
                   O atendimento foi encerrado pelo atendente.

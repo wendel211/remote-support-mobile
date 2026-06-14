@@ -23,6 +23,9 @@ export interface PerformanceReport {
   averageJSHeapMB: number;
   peakJSHeapMB: number;
   componentRenderTimes: Record<string, { average: number; count: number }>;
+  frameSampleCount: number;
+  memorySampleCount: number;
+  renderSampleCount: number;
   generatedAt: number;
 }
 

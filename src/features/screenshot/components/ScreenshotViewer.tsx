@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Image, StyleSheet, TouchableOpacity, Modal, Text } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { getPoppinsTextStyle } from '@shared/ui/typography';
 
 interface ScreenshotViewerProps {
   base64: string | null;
@@ -73,11 +74,13 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 20,
     fontWeight: '700',
+    ...getPoppinsTextStyle('bold'),
     textAlign: 'center',
   },
   subtitle: {
     color: '#CBD5E1',
     fontSize: 13,
+    ...getPoppinsTextStyle('regular'),
     marginTop: 4,
     textAlign: 'center',
   },

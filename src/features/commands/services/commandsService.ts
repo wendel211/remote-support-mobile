@@ -55,7 +55,7 @@ export function listenToPendingCommand(
     }));
 
     const pending = commands
-      .filter((c) => c.acknowledgedAt === null)
+      .filter((c) => c.acknowledgedAt == null)
       .sort((a, b) => b.sentAt - a.sentAt)[0];
 
     callback(pending ?? null);

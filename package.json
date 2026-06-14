@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "index.ts",
   "dependencies": {
+    "@expo-google-fonts/poppins": "^0.4.1",
     "@expo/vector-icons": "^15.0.2",
     "@gluestack-ui/core": "^3.0.24",
     "@gluestack-ui/nativewind-utils": "^1.0.28",
@@ -16,6 +17,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "expo": "~56.0.11",
+    "expo-font": "^56.0.6",
     "expo-notifications": "~56.0.17",
     "expo-status-bar": "~56.0.4",
     "firebase": "^12.14.0",

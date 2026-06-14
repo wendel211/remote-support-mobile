@@ -8,5 +8,7 @@ export interface Session {
   role: UserRole | null;
   attendantConnected: boolean;
   clientConnected: boolean;
+  attendantOnline?: boolean;
+  clientOnline?: boolean;
   createdAt: number;
 }

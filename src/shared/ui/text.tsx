@@ -1,6 +1,7 @@
 import React from 'react';
 import { Text as RNText, type TextProps as RNTextProps } from 'react-native';
 import { cn } from './utils';
+import { getPoppinsTextStyle } from './typography';
 
 type TextSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 type TextTone = 'default' | 'muted' | 'inverse' | 'primary' | 'danger' | 'success';
@@ -45,6 +46,7 @@ export const Text = React.forwardRef<RNText, TextProps>(
       size = 'md',
       tone = 'default',
       weight = 'regular',
+      style,
       ...props
     },
     ref,
@@ -53,9 +55,9 @@ export const Text = React.forwardRef<RNText, TextProps>(
       ref={ref}
       className={cn(sizeClass[size], toneClass[tone], weightClass[weight], className)}
       {...props}
+      style={[getPoppinsTextStyle(weight), style]}
     />
   ),
 );
 
 Text.displayName = 'Text';
-

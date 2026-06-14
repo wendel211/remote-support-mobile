@@ -24,11 +24,11 @@ interface CommandDefinition {
 }
 
 const COMMAND_DEFINITIONS: CommandDefinition[] = [
-  { type: 'OPEN_SETTINGS', label: 'Configuracoes', icon: 'cog' },
+  { type: 'OPEN_SETTINGS', label: 'Configurações', icon: 'cog' },
   { type: 'RESTART_APP', label: 'Reiniciar app', icon: 'restart' },
   { type: 'NAVIGATE_URL', label: 'Abrir URL', icon: 'link' },
   { type: 'CLEAR_CACHE', label: 'Limpar cache', icon: 'trash-can' },
-  { type: 'SHOW_INFO', label: 'Info do dispositivo', icon: 'information' },
+  { type: 'SHOW_INFO', label: 'Informações do dispositivo', icon: 'information' },
 ];
 
 export function CommandPicker({

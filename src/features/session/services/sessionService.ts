@@ -4,6 +4,7 @@ import {
   get,
   update,
   onValue,
+  onDisconnect,
   type Unsubscribe,
 } from 'firebase/database';
 import { database } from '@services/firebase';
@@ -12,7 +13,7 @@ import type { Session, SessionStatus } from '../types';
 const CHARACTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 const CODE_LENGTH = 6;
 const PERMISSION_DENIED_MESSAGE =
-  'Permissao negada no Firebase. Configure as regras do Realtime Database para permitir leitura e escrita em sessions.';
+  'Permissão negada no Firebase. Configure as regras do Realtime Database para permitir leitura e escrita em sessions.';
 
 function normalizeFirebaseError(err: unknown, fallback: string): Error {
   if (err instanceof Error) {
@@ -45,13 +46,33 @@ export async function createSession(code: string): Promise<void> {
     status: 'waiting',
     attendantConnected: true,
     clientConnected: false,
+    attendantOnline: true,
+    clientOnline: false,
     createdAt: Date.now(),
   };
 
   try {
     await set(sessionRef, sessionData);
   } catch (err: unknown) {
-    throw normalizeFirebaseError(err, 'Erro ao criar sessao.');
+    throw normalizeFirebaseError(err, 'Erro ao criar a sessão.');
+  }
+}
+
+export async function registerAttendantPresence(code: string): Promise<void> {
+  const sessionRef = ref(database, `sessions/${code}`);
+
+  try {
+    await update(sessionRef, {
+      attendantConnected: true,
+      attendantOnline: true,
+    });
+    await onDisconnect(sessionRef).update({
+      attendantOnline: false,
+      attendantConnected: false,
+      status: 'ended',
+    });
+  } catch (err: unknown) {
+    throw normalizeFirebaseError(err, 'Erro ao registrar a presença do atendente.');
   }
 }
 
@@ -62,26 +83,32 @@ export async function joinSession(code: string): Promise<Session> {
   try {
     snapshot = await get(sessionRef);
   } catch (err: unknown) {
-    throw normalizeFirebaseError(err, 'Erro ao buscar sessao.');
+    throw normalizeFirebaseError(err, 'Erro ao buscar a sessão.');
   }
 
   if (!snapshot.exists()) {
-    throw new Error('Sessao nao encontrada.');
+    throw new Error('Sessão não encontrada.');
   }
 
   const data = snapshot.val() as Omit<Session, 'code' | 'role'>;
 
   if (data.status !== 'waiting') {
-    throw new Error('Esta sessao nao esta disponivel para conexao.');
+    throw new Error('Esta sessão não está disponível para conexão.');
   }
 
   try {
     await update(sessionRef, {
       clientConnected: true,
+      clientOnline: true,
       status: 'connected',
     });
+    await onDisconnect(sessionRef).update({
+      clientOnline: false,
+      clientConnected: false,
+      status: 'ended',
+    });
   } catch (err: unknown) {
-    throw normalizeFirebaseError(err, 'Erro ao entrar na sessao.');
+    throw normalizeFirebaseError(err, 'Erro ao entrar na sessão.');
   }
 
   return {
@@ -102,7 +129,7 @@ export async function updateSessionStatus(
   try {
     await update(sessionRef, { status });
   } catch (err: unknown) {
-    throw normalizeFirebaseError(err, 'Erro ao atualizar sessao.');
+    throw normalizeFirebaseError(err, 'Erro ao atualizar a sessão.');
   }
 }
 
@@ -138,6 +165,6 @@ export async function endSession(code: string): Promise<void> {
       clientConnected: false,
     });
   } catch (err: unknown) {
-    throw normalizeFirebaseError(err, 'Erro ao encerrar sessao.');
+    throw normalizeFirebaseError(err, 'Erro ao encerrar a sessão.');
   }
 }

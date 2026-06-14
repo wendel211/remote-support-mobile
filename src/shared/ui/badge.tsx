@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, type ViewProps, type TextProps } from 'react-native';
 import { cn } from './utils';
+import { getPoppinsTextStyle } from './typography';
 
 type BadgeTone = 'neutral' | 'primary' | 'success' | 'warning' | 'danger';
 
@@ -47,14 +48,14 @@ export interface BadgeTextProps extends TextProps {
 }
 
 export const BadgeText = React.forwardRef<Text, BadgeTextProps>(
-  ({ className, tone = 'neutral', ...props }, ref) => (
+  ({ className, tone = 'neutral', style, ...props }, ref) => (
     <Text
       ref={ref}
       className={cn('text-xs font-semibold', badgeTextToneClass[tone], className)}
       {...props}
+      style={[getPoppinsTextStyle('semibold'), style]}
     />
   ),
 );
 
 BadgeText.displayName = 'BadgeText';
-
