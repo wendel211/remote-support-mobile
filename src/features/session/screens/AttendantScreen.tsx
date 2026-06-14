@@ -46,6 +46,8 @@ import {
 } from '@features/commands';
 import type { Command } from '@features/commands';
 
+import { usePerformanceMonitor, useRenderMetric } from '@features/performance';
+
 type Props = NativeStackScreenProps<RootStackParamList, 'Attendant'>;
 
 export function AttendantScreen({ navigation }: Props): React.JSX.Element {
@@ -54,6 +56,9 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
   const [sessionCode, setSessionCode] = useState('');
   const [currentStatus, setCurrentStatus] = useState<SessionStatus>('idle');
   const unsubscribeRef = useRef<(() => void) | null>(null);
+
+  usePerformanceMonitor(currentStatus === 'connected' ? sessionCode : '');
+  useRenderMetric('AttendantScreen');
 
   const lastScreenshot = useAppSelector(
     (state) => state.screenshot.lastScreenshot,

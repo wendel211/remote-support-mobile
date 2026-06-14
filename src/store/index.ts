@@ -3,6 +3,7 @@ import { sessionReducer } from '@features/session/store';
 import { chatReducer } from '@features/chat/store';
 import { screenshotReducer } from '@features/screenshot/store';
 import { commandsReducer } from '@features/commands/store';
+import { performanceReducer } from '@features/performance/store';
 
 export const store = configureStore({
   reducer: {
@@ -10,6 +11,7 @@ export const store = configureStore({
     chat: chatReducer,
     screenshot: screenshotReducer,
     commands: commandsReducer,
+    performance: performanceReducer,
   },
 });
 

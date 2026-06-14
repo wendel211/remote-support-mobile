@@ -34,6 +34,8 @@ import {
   CommandModal,
 } from '@features/commands';
 
+import { usePerformanceMonitor, useRenderMetric } from '@features/performance';
+
 type Props = NativeStackScreenProps<RootStackParamList, 'Client'>;
 
 export function ClientScreen({ navigation }: Props): React.JSX.Element {
@@ -44,6 +46,9 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
   const [isConnected, setIsConnected] = useState(false);
   const [connectedCode, setConnectedCode] = useState('');
   const unsubscribeRef = useRef<(() => void) | null>(null);
+
+  usePerformanceMonitor(isConnected ? connectedCode : '');
+  useRenderMetric('ClientScreen');
 
   const pendingCommand = useAppSelector(
     (state) => state.commands.pendingCommand,
