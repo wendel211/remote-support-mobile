@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { ActivityIndicator } from 'react-native';
+import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Platform } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -18,6 +18,7 @@ import {
   clearSession,
 } from '@features/session/store';
 import { clearMessages } from '@features/chat/store';
+import { sendMessage } from '@features/chat';
 import type { Session, SessionStatus } from '@features/session/types';
 import { StatusBadge } from '@shared/components';
 import { ChatScreen } from '@features/chat/components';
@@ -54,7 +55,17 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
   const [initError, setInitError] = useState<string | null>(null);
   const [sessionCode, setSessionCode] = useState('');
   const [currentStatus, setCurrentStatus] = useState<SessionStatus>('idle');
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const unsubscribeRef = useRef<(() => void) | null>(null);
+  const prevStatusRef = useRef<SessionStatus>('idle');
+
+  const currentStatusRef = useRef<SessionStatus>('idle');
+  const sessionCodeRef = useRef('');
+
+  useEffect(() => {
+    currentStatusRef.current = currentStatus;
+    sessionCodeRef.current = sessionCode;
+  }, [currentStatus, sessionCode]);
 
   usePerformanceMonitor(currentStatus === 'connected' ? sessionCode : '');
   useRenderMetric('AttendantScreen');
@@ -69,27 +80,41 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
   );
 
   const handleRequestScreenshot = useCallback(async () => {
+    console.log('[ATTENDANT] handleRequestScreenshot chamado. sessionCode:', sessionCode);
     dispatch(setIsSending(true));
     dispatch(setError(null));
     try {
       await requestScreenshot(sessionCode);
+      console.log('[ATTENDANT] requestScreenshot gravado com sucesso no Firebase.');
+      await sendMessage(sessionCode, {
+        sessionCode,
+        text: 'Captura de tela solicitada pelo atendente.',
+        role: 'system',
+        status: 'sent',
+        timestamp: Date.now(),
+      });
     } catch (err: unknown) {
       dispatch(setIsSending(false));
       const errorMessage =
         err instanceof Error ? err.message : 'Erro ao solicitar screenshot';
+      console.error('[ATTENDANT] Erro ao gravar requestScreenshot:', errorMessage);
       dispatch(setError(errorMessage));
     }
   }, [sessionCode, dispatch]);
 
   useEffect(() => {
     if (currentStatus !== 'connected' || !sessionCode) {
+      console.log('[ATTENDANT] listenToScreenshotRequest desativado. Status:', currentStatus, 'Code:', sessionCode);
       return undefined;
     }
 
+    console.log('[ATTENDANT] Ativando listenToScreenshotRequest para:', sessionCode);
     const unsub = listenToScreenshotRequest(sessionCode, (request) => {
+      console.log('[ATTENDANT] listenToScreenshotRequest detectou mudanca:', request);
       dispatch(setPendingRequest(request));
 
       if (request?.error) {
+        console.log('[ATTENDANT] Request retornou erro do cliente:', request.error);
         dispatch(setError(request.error));
         dispatch(setIsSending(false));
         void clearScreenshotRequest(sessionCode);
@@ -97,6 +122,7 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
       }
 
       if (request && request.sentAt !== null && request.base64) {
+        console.log('[ATTENDANT] Screenshot recebida com sucesso! Tamanho:', request.base64.length);
         dispatch(setLastScreenshot(request.base64));
         dispatch(setIsSending(false));
         void clearScreenshotRequest(sessionCode);
@@ -104,6 +130,7 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
     });
 
     return () => {
+      console.log('[ATTENDANT] Desinscrevendo do listenToScreenshotRequest.');
       unsub();
     };
   }, [currentStatus, sessionCode, dispatch]);
@@ -142,6 +169,7 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
     setSessionCode(code);
 
     try {
+      dispatch(clearScreenshot());
       await createSession(code);
 
       dispatch(setRole('attendant'));
@@ -165,6 +193,13 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
             dispatch(setSession(session));
             dispatch(setStatus(session.status));
             setCurrentStatus(session.status);
+            if (
+              session.status === 'connected' &&
+              prevStatusRef.current !== 'connected'
+            ) {
+              dispatch(clearScreenshot());
+            }
+            prevStatusRef.current = session.status;
           }
         },
       );
@@ -184,9 +219,35 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
     return () => {
       if (unsubscribeRef.current) {
         unsubscribeRef.current();
+        unsubscribeRef.current = null;
+      }
+      // Encerrar a sessão no Firebase ao desmontar o componente usando os refs atualizados
+      if (
+        sessionCodeRef.current &&
+        currentStatusRef.current !== 'idle' &&
+        currentStatusRef.current !== 'ended'
+      ) {
+        void endSession(sessionCodeRef.current);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initSession]);
+
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      () => setIsKeyboardVisible(true),
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => setIsKeyboardVisible(false),
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
 
   const handleEndSession = useCallback(async () => {
     if (sessionCode) {
@@ -260,94 +321,104 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
 
   if (currentStatus === 'connected') {
     return (
-      <Box className="flex-1 bg-[#F3F4F6]">
-        <VStack
-          className="bg-[#F3F4F6] px-4 pb-3"
-          style={{ paddingTop: Math.max(insets.top, 24) + 10 }}
-          space="sm"
-        >
-          <HStack className="items-center justify-between rounded-2xl border border-[#E2E8F0] bg-white px-4 py-3 shadow-sm">
-            <HStack className="items-center" space="sm">
-              <Box className="h-11 w-11 items-center justify-center rounded-xl bg-[#F1F5F9]">
-                <AttendantIcon />
-              </Box>
-              <VStack space="xs">
-                <Text className="text-[16px] leading-[19px] text-[#0F172A]" weight="bold">
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        className="flex-1"
+      >
+        <Box className="flex-1 bg-[#F3F4F6]">
+          <VStack
+            className="bg-[#F3F4F6] px-4 pb-3"
+            style={{ paddingTop: Math.max(insets.top, 24) + 10 }}
+            space="sm"
+          >
+            <HStack className="items-center justify-between rounded-2xl border border-[#E2E8F0] bg-white px-4 py-3 shadow-sm">
+              <HStack className="items-center flex-1" space="md">
+                <Box className="h-10 w-10 items-center justify-center rounded-xl bg-[#F1F5F9]">
+                  <AttendantIcon size={22} />
+                </Box>
+                <Text className="text-[17px] text-[#0F172A]" weight="bold">
                   Atendente
                 </Text>
-                <Text className="text-[11px] leading-[13px] text-[#64748B]">
-                  Sessao ativa
-                </Text>
-              </VStack>
+                <Box className="rounded-md bg-[#F1F5F9] px-2 py-0.5">
+                  <Text className="text-[12px] leading-4 text-[#64748B]" weight="bold">
+                    #{sessionCode}
+                  </Text>
+                </Box>
+                <StatusBadge status={currentStatus} />
+              </HStack>
             </HStack>
-            <VStack className="items-end" space="xs">
-              <Box className="rounded-md bg-[#EAF2FF] px-2.5 py-1">
-                <Text className="text-[12px] leading-4 text-[#2563EB]" weight="bold">
-                  {sessionCode}
-                </Text>
-              </Box>
-              <StatusBadge status={currentStatus} />
-            </VStack>
-          </HStack>
-
-          <HStack className="justify-center rounded-xl bg-[#ECFDF5] py-2" space="sm">
-            <ConnectedIcon />
-            <Text className="text-[12px] leading-4 text-[#059669]" weight="semibold">
-              Cliente conectado
-            </Text>
-          </HStack>
-        </VStack>
-
-        <Box className="border-y border-[#E2E8F0] bg-white px-4 py-3">
-          <ScreenshotButton
-            onPress={() => void handleRequestScreenshot()}
-            isLoading={isSending}
-          />
-          {screenshotError ? (
-            <Box className="mt-3 rounded-xl border border-red-100 bg-danger-50 px-4 py-3">
-              <Text className="text-center text-[12px]" tone="danger" weight="medium">
-                {screenshotError}
+  
+            <HStack className="justify-center rounded-xl bg-[#ECFDF5] py-2" space="xs">
+              <ConnectedIcon />
+              <Text className="text-[12px] leading-4 text-[#059669]" weight="semibold">
+                Cliente conectado com sucesso
               </Text>
-            </Box>
-          ) : null}
-        </Box>
+            </HStack>
+          </VStack>
 
-        <CommandPicker
-          sessionCode={sessionCode}
-          onSend={(cmd) => {
-            void (async () => {
-              const id = await sendCommand(sessionCode, cmd);
-              dispatch(
-                addSentCommand({
-                  ...cmd,
-                  id,
-                  sentAt: Date.now(),
-                  acknowledgedAt: null,
-                } as Command),
-              );
-            })();
-          }}
-        />
+        {!isKeyboardVisible && (
+          <>
+            <Box className="border-y border-[#E2E8F0] bg-white px-4 py-3">
+              <ScreenshotButton
+                onPress={() => void handleRequestScreenshot()}
+                isLoading={isSending}
+              />
+              {screenshotError ? (
+                <Box className="mt-3 rounded-xl border border-red-100 bg-danger-50 px-4 py-3">
+                  <Text className="text-center text-[12px]" tone="danger" weight="medium">
+                    {screenshotError}
+                  </Text>
+                </Box>
+              ) : null}
+            </Box>
+
+            <CommandPicker
+              sessionCode={sessionCode}
+              onSend={(cmd) => {
+                void (async () => {
+                  const id = await sendCommand(sessionCode, cmd);
+                  dispatch(
+                    addSentCommand({
+                      ...cmd,
+                      id,
+                      sentAt: Date.now(),
+                      acknowledgedAt: null,
+                    } as Command),
+                  );
+                })();
+              }}
+            />
+          </>
+        )}
 
         <ChatScreen sessionCode={sessionCode} currentRole="attendant" />
 
-        <Box className="bg-white px-4 py-3">
-          <Button
-            className="min-h-12"
-            tone="danger"
-            onPress={() => void handleEndSession()}
+        {!isKeyboardVisible && (
+          <Box 
+            className="bg-white px-4 pt-3"
+            style={{ paddingBottom: Math.max(insets.bottom, 12) }}
           >
-            <ButtonText tone="danger">Encerrar sessao</ButtonText>
-          </Button>
-        </Box>
+            <Button
+              className="min-h-12 w-full"
+              tone="danger"
+              onPress={() => void handleEndSession()}
+            >
+              <HStack className="items-center justify-center" space="sm">
+                <MaterialCommunityIcons name="power" size={18} color="#FFFFFF" />
+                <ButtonText tone="danger">Encerrar sessão</ButtonText>
+              </HStack>
+            </Button>
+          </Box>
+        )}
 
         <ScreenshotViewer
           base64={lastScreenshot}
           onClose={() => dispatch(setLastScreenshot(null))}
         />
       </Box>
-    );
-  }
+    </KeyboardAvoidingView>
+  );
+}
 
   return (
     <Box
@@ -414,9 +485,9 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
   );
 }
 
-function AttendantIcon({ large = false }: { large?: boolean }): React.JSX.Element {
+function AttendantIcon({ large = false, size }: { large?: boolean; size?: number }): React.JSX.Element {
   return (
-    <MaterialCommunityIcons name="tools" size={large ? 36 : 27} color="#475569" />
+    <MaterialCommunityIcons name="tools" size={size ?? (large ? 36 : 22)} color="#475569" />
   );
 }
 

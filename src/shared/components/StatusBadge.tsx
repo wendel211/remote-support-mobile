@@ -41,13 +41,14 @@ export function StatusBadge({ status }: StatusBadgeProps): React.JSX.Element {
 
   return (
     <HStack
-      className={`self-center rounded-full border px-3 py-2 ${config.surfaceClass}`}
-      space="sm"
+      className={`self-center rounded-full border px-2.5 py-0.5 ${config.surfaceClass}`}
+      style={{ alignItems: 'center' }}
+      space="xs"
     >
-      <Box className={`h-2.5 w-2.5 rounded-full ${config.dotClass}`} />
+      <Box className={`h-1.5 w-1.5 rounded-full ${config.dotClass}`} />
       <Text
         className={config.labelClass}
-        size="sm"
+        size="xs"
         weight="semibold"
       >
         {config.label}

@@ -1,9 +1,11 @@
 import React, { useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   FlatList,
-  KeyboardAvoidingView,
   Platform,
+  View,
 } from 'react-native';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { Box, Button, ButtonText, HStack, Text, VStack } from '@shared/ui';
 import { useAppDispatch, useAppSelector } from '@store/hooks';
 import {
   sendMessage,
@@ -25,15 +27,20 @@ import { ChatInput } from './ChatInput';
 interface ChatScreenProps {
   sessionCode: string;
   currentRole: MessageRole;
+  onApproveScreenshot?: () => void;
+  onDeclineScreenshot?: () => void;
 }
 
 export function ChatScreen({
   sessionCode,
   currentRole,
+  onApproveScreenshot,
+  onDeclineScreenshot,
 }: ChatScreenProps): React.JSX.Element {
   const dispatch = useAppDispatch();
   const messages = useAppSelector((state) => state.chat.messages);
   const isTyping = useAppSelector((state) => state.chat.isTyping);
+  const pendingRequest = useAppSelector((state) => state.screenshot.pendingRequest);
   const listRef = useRef<FlatList<ChatMessage>>(null);
 
   const oppositeRole: MessageRole =
@@ -132,11 +139,7 @@ export function ChatScreen({
   );
 
   return (
-    <KeyboardAvoidingView
-      className="flex-1 bg-background"
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-    >
+    <View className="flex-1 bg-background">
       <FlatList
         ref={listRef}
         className="flex-1"
@@ -155,13 +158,56 @@ export function ChatScreen({
           listRef.current?.scrollToEnd({ animated: false });
         }}
         ListFooterComponent={
-          <TypingIndicator visible={isTyping} role={oppositeRole} />
+          <VStack space="md" className="px-4 py-2">
+            {pendingRequest &&
+              !pendingRequest.sentAt &&
+              !pendingRequest.base64 &&
+              !pendingRequest.error && (
+                <Box className="rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] p-4 shadow-sm">
+                  <HStack space="md" className="items-center">
+                    <Box className="h-10 w-10 items-center justify-center rounded-full bg-blue-50">
+                      <MaterialCommunityIcons name="camera" size={20} color="#2563EB" />
+                    </Box>
+                    <VStack space="xs" className="flex-1">
+                      <Text className="text-[15px] text-[#0F172A]" weight="bold">
+                        Screenshot solicitado
+                      </Text>
+                      <Text className="text-[13px] text-[#64748B]">
+                        {currentRole === 'client'
+                          ? 'O atendente solicitou uma captura de tela do seu aplicativo.'
+                          : 'Aguardando aprovação do cliente...'}
+                      </Text>
+                    </VStack>
+                  </HStack>
+
+                  {currentRole === 'client' && (
+                    <HStack space="sm" className="mt-3">
+                      <Button
+                        variant="outline"
+                        tone="danger"
+                        className="min-h-10 flex-1 rounded-xl"
+                        onPress={onDeclineScreenshot}
+                      >
+                        <ButtonText variant="outline" tone="danger" size="sm">Recusar</ButtonText>
+                      </Button>
+                      <Button
+                        className="min-h-10 flex-1 rounded-xl"
+                        onPress={onApproveScreenshot}
+                      >
+                        <ButtonText size="sm">Permitir</ButtonText>
+                      </Button>
+                    </HStack>
+                  )}
+                </Box>
+              )}
+            <TypingIndicator visible={isTyping} role={oppositeRole} />
+          </VStack>
         }
       />
       <ChatInput
         onSend={handleSend}
         onTypingChange={handleTypingChange}
       />
-    </KeyboardAvoidingView>
+    </View>
   );
 }

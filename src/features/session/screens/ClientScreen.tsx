@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { ActivityIndicator } from 'react-native';
+import { ActivityIndicator, Modal, Keyboard, KeyboardAvoidingView, Platform } from 'react-native';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@navigation/types';
@@ -16,11 +17,11 @@ import {
   clearSession,
 } from '@features/session/store';
 import { clearMessages } from '@features/chat/store';
+import { sendMessage } from '@features/chat';
 import type { Session } from '@features/session/types';
 import { StatusBadge } from '@shared/components';
 import { ChatScreen } from '@features/chat/components';
-import ViewShot from 'react-native-view-shot';
-import { useScreenshotCapture } from '@features/screenshot';
+import { useScreenshotCapture, clearScreenshot, sendScreenshotError } from '@features/screenshot';
 import {
   listenToPendingCommand,
   acknowledgeCommand,
@@ -49,7 +50,17 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
   const [isLoading, setIsLoading] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [connectedCode, setConnectedCode] = useState('');
+  const [showEndedModal, setShowEndedModal] = useState(false);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const unsubscribeRef = useRef<(() => void) | null>(null);
+
+  const isConnectedRef = useRef(false);
+  const connectedCodeRef = useRef('');
+
+  useEffect(() => {
+    isConnectedRef.current = isConnected;
+    connectedCodeRef.current = connectedCode;
+  }, [isConnected, connectedCode]);
 
   usePerformanceMonitor(isConnected ? connectedCode : '');
   useRenderMetric('ClientScreen');
@@ -58,7 +69,7 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
     (state) => state.commands.pendingCommand,
   );
 
-  const { captureRef, isSending } = useScreenshotCapture(connectedCode);
+  const { viewRef, isSending, captureAndSend } = useScreenshotCapture(connectedCode);
 
   const handleJoinSession = useCallback(async () => {
     if (code.length !== 6) {
@@ -79,14 +90,19 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
       unsubscribeRef.current = listenToSession(
         code,
         (updatedSession: Session | null) => {
-          if (!updatedSession || updatedSession.status === 'ended') {
+          if (
+            !updatedSession ||
+            updatedSession.status === 'ended' ||
+            updatedSession.attendantConnected === false
+          ) {
             if (unsubscribeRef.current) {
               unsubscribeRef.current();
               unsubscribeRef.current = null;
             }
             dispatch(clearMessages());
             dispatch(clearSession());
-            navigation.navigate('RoleSelection');
+            dispatch(clearScreenshot());
+            setShowEndedModal(true);
           } else {
             dispatch(setSession(updatedSession));
           }
@@ -106,6 +122,25 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
       if (unsubscribeRef.current) {
         unsubscribeRef.current();
       }
+      if (isConnectedRef.current && connectedCodeRef.current) {
+        void endSession(connectedCodeRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      () => setIsKeyboardVisible(true),
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => setIsKeyboardVisible(false),
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
     };
   }, []);
 
@@ -135,9 +170,16 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
       await endSession(connectedCode);
       dispatch(clearMessages());
       dispatch(clearSession());
+      dispatch(clearScreenshot());
       navigation.navigate('RoleSelection');
     }
   }, [connectedCode, dispatch, navigation]);
+
+  const handleCloseEndedModal = useCallback(() => {
+    setShowEndedModal(false);
+    setIsConnected(false);
+    navigation.navigate('RoleSelection');
+  }, [navigation]);
 
   const handleCodeChange = useCallback((text: string) => {
     setCode(text.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6));
@@ -145,89 +187,141 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
 
   if (isConnected) {
     return (
-      <ViewShot ref={captureRef} style={{ flex: 1 }}>
-        <Box className="flex-1 bg-[#F3F4F6]">
-          <VStack
-            className="bg-[#F3F4F6] px-4 pb-3"
-            style={{ paddingTop: Math.max(insets.top, 24) + 10 }}
-            space="sm"
-          >
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        className="flex-1"
+      >
+        <Box
+          ref={viewRef}
+          className="flex-1 bg-[#F3F4F6]"
+          collapsable={false}
+        >
+        <VStack
+          className="bg-[#F3F4F6] px-4 pb-3"
+          style={{ paddingTop: Math.max(insets.top, 24) + 10 }}
+          space="sm"
+        >
             <HStack className="items-center justify-between rounded-2xl border border-[#E2E8F0] bg-white px-4 py-3 shadow-sm">
-              <HStack className="items-center" space="sm">
-                <Box className="h-11 w-11 items-center justify-center rounded-xl bg-[#F8FAFC]">
+              <HStack className="items-center flex-1" space="md">
+                <Box className="h-10 w-10 items-center justify-center rounded-xl bg-[#F8FAFC]">
                   <ClientIcon />
                 </Box>
-                <VStack space="xs">
-                  <Text className="text-[16px] leading-[19px] text-[#0F172A]" weight="bold">
-                    Cliente
-                  </Text>
-                  <Text className="text-[11px] leading-[13px] text-[#64748B]">
-                    Sessao ativa
-                  </Text>
-                </VStack>
-              </HStack>
-              <VStack className="items-end" space="xs">
-                <Box className="rounded-md bg-[#EAF2FF] px-2.5 py-1">
-                  <Text className="text-[12px] leading-4 text-[#2563EB]" weight="bold">
-                    {connectedCode}
+                <Text className="text-[17px] text-[#0F172A]" weight="bold">
+                  Cliente
+                </Text>
+                <Box className="rounded-md bg-[#F1F5F9] px-2 py-0.5">
+                  <Text className="text-[12px] leading-4 text-[#64748B]" weight="bold">
+                    #{connectedCode}
                   </Text>
                 </Box>
                 <StatusBadge status="connected" />
-              </VStack>
+              </HStack>
             </HStack>
 
-            {isSending && (
-              <Box className="rounded-xl border border-orange-100 bg-warning-50 py-2">
-                <Text
-                  className="text-center text-[12px] text-warning-500"
-                  weight="semibold"
-                >
-                  Enviando screenshot...
-                </Text>
-              </Box>
-            )}
-
-            <HStack className="justify-center rounded-xl bg-[#ECFDF5] py-2" space="sm">
-              <ConnectedIcon />
-              <Text className="text-[12px] leading-4 text-[#059669]" weight="semibold">
-                Conectado ao atendente
+          {isSending && (
+            <Box className="rounded-xl border border-orange-100 bg-warning-50 py-2">
+              <Text
+                className="text-center text-[12px] text-warning-500"
+                weight="semibold"
+              >
+                Enviando screenshot...
               </Text>
-            </HStack>
-          </VStack>
+            </Box>
+          )}
 
-          <ChatScreen sessionCode={connectedCode} currentRole="client" />
+          <HStack className="justify-center rounded-xl bg-[#ECFDF5] py-2" space="sm">
+            <ConnectedIcon />
+            <Text className="text-[12px] leading-4 text-[#059669]" weight="semibold">
+              Conectado ao atendente
+            </Text>
+          </HStack>
+        </VStack>
 
-          <Box className="bg-white px-4 py-3">
+        <ChatScreen
+          sessionCode={connectedCode}
+          currentRole="client"
+          onApproveScreenshot={captureAndSend}
+          onDeclineScreenshot={async () => {
+            await sendScreenshotError(connectedCode, 'A solicitação de captura de tela foi recusada pelo cliente.');
+            await sendMessage(connectedCode, {
+              sessionCode: connectedCode,
+              text: 'Solicitação de captura de tela recusada pelo cliente.',
+              role: 'system',
+              status: 'sent',
+              timestamp: Date.now(),
+            });
+          }}
+        />
+
+        {!isKeyboardVisible && (
+          <Box 
+            className="bg-white px-4 pt-3"
+            style={{ paddingBottom: Math.max(insets.bottom, 12) }}
+          >
             <Button
-              className="min-h-12"
+              className="min-h-12 w-full"
               tone="danger"
               onPress={() => void handleLeaveSession()}
             >
-              <ButtonText tone="danger">Sair da sessao</ButtonText>
+              <HStack className="items-center justify-center" space="sm">
+                <MaterialCommunityIcons name="power" size={18} color="#FFFFFF" />
+                <ButtonText tone="danger">Sair da sessão</ButtonText>
+              </HStack>
             </Button>
           </Box>
+        )}
 
-          <CommandModal
-            command={pendingCommand}
-            onAcknowledge={() => {
-              if (pendingCommand) {
-                void acknowledgeCommand(connectedCode, pendingCommand.id);
-                if (
-                  pendingCommand.type === 'NAVIGATE_URL' &&
-                  pendingCommand.payload?.url
-                ) {
-                  navigation.navigate('WebView', {
-                    url: pendingCommand.payload.url,
-                  });
-                }
-                dispatch(setPendingCommand(null));
+        <CommandModal
+          command={pendingCommand}
+          onAcknowledge={() => {
+            if (pendingCommand) {
+              void acknowledgeCommand(connectedCode, pendingCommand.id);
+              if (
+                pendingCommand.type === 'NAVIGATE_URL' &&
+                pendingCommand.payload?.url
+              ) {
+                navigation.navigate('WebView', {
+                  url: pendingCommand.payload.url,
+                });
               }
-            }}
-          />
-        </Box>
-      </ViewShot>
-    );
-  }
+              dispatch(setPendingCommand(null));
+            }
+          }}
+        />
+
+        <Modal
+          visible={showEndedModal}
+          transparent
+          animationType="fade"
+          statusBarTranslucent
+        >
+          <Box className="flex-1 items-center justify-center bg-black/60 px-8">
+            <Box className="w-full rounded-panel bg-surface px-6 py-8 shadow-soft">
+              <VStack className="items-center" space="md">
+                <Box className="h-16 w-16 items-center justify-center rounded-2xl bg-danger-50">
+                  <MaterialCommunityIcons name="alert-circle-outline" size={36} color="#DC2626" />
+                </Box>
+
+                <VStack className="items-center" space="xs">
+                  <Text className="text-center text-[20px] leading-[26px] text-[#0F172A]" weight="bold">
+                    Sessão Encerrada
+                  </Text>
+                  <Text className="text-center text-[13px] leading-[19px] text-[#64748B]">
+                    O atendimento foi encerrado pelo atendente.
+                  </Text>
+                </VStack>
+
+                <Button className="mt-2 w-full" onPress={handleCloseEndedModal}>
+                  <ButtonText>Entendido</ButtonText>
+                </Button>
+              </VStack>
+            </Box>
+          </Box>
+        </Modal>
+      </Box>
+    </KeyboardAvoidingView>
+  );
+}
 
   return (
     <Box
@@ -295,6 +389,36 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
           </VStack>
         </Box>
       </VStack>
+
+      <Modal
+        visible={showEndedModal}
+        transparent
+        animationType="fade"
+        statusBarTranslucent
+      >
+        <Box className="flex-1 items-center justify-center bg-black/60 px-8">
+          <Box className="w-full rounded-panel bg-surface px-6 py-8 shadow-soft">
+            <VStack className="items-center" space="md">
+              <Box className="h-16 w-16 items-center justify-center rounded-2xl bg-danger-50">
+                <MaterialCommunityIcons name="alert-circle-outline" size={36} color="#DC2626" />
+              </Box>
+
+              <VStack className="items-center" space="xs">
+                <Text className="text-center text-[20px] leading-[26px] text-[#0F172A]" weight="bold">
+                  Sessão Encerrada
+                </Text>
+                <Text className="text-center text-[13px] leading-[19px] text-[#64748B]">
+                  O atendimento foi encerrado pelo atendente.
+                </Text>
+              </VStack>
+
+              <Button className="mt-2 w-full" onPress={handleCloseEndedModal}>
+                <ButtonText>Entendido</ButtonText>
+              </Button>
+            </VStack>
+          </Box>
+        </Box>
+      </Modal>
     </Box>
   );
 }

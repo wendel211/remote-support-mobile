@@ -32,8 +32,21 @@ function getStatusIndicator(status: ChatMessage['status']): string {
 export function ChatBubble({
   message,
   currentRole,
-}: ChatBubbleProps): React.JSX.Element {
+}: ChatBubbleProps) {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
+  if (message.role === 'system') {
+    return (
+      <Box className="my-2 items-center justify-center px-4">
+        <Box className="rounded-full bg-slate-100 border border-slate-200 px-3.5 py-1">
+          <Text className="text-center text-[12px] leading-4 text-slate-500" weight="semibold">
+            {message.text}
+          </Text>
+        </Box>
+      </Box>
+    );
+  }
+
   const isOwn = message.role === currentRole;
 
   const textTrimmed = message.text.trim();

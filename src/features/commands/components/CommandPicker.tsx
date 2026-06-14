@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Alert, Platform, ScrollView } from 'react-native';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import {
   Box,
   Button,
@@ -19,15 +20,15 @@ interface CommandPikerProps {
 interface CommandDefinition {
   type: CommandType;
   label: string;
-  emoji: string;
+  icon: keyof typeof MaterialCommunityIcons.glyphMap;
 }
 
 const COMMAND_DEFINITIONS: CommandDefinition[] = [
-  { type: 'OPEN_SETTINGS', label: 'Configurações', emoji: '⚙️' },
-  { type: 'RESTART_APP', label: 'Reiniciar app', emoji: '🔄' },
-  { type: 'NAVIGATE_URL', label: 'Abrir URL', emoji: '🌐' },
-  { type: 'CLEAR_CACHE', label: 'Limpar cache', emoji: '🗑️' },
-  { type: 'SHOW_INFO', label: 'Info do dispositivo', emoji: 'ℹ️' },
+  { type: 'OPEN_SETTINGS', label: 'Configurações', icon: 'cog' },
+  { type: 'RESTART_APP', label: 'Reiniciar app', icon: 'restart' },
+  { type: 'NAVIGATE_URL', label: 'Abrir URL', icon: 'link' },
+  { type: 'CLEAR_CACHE', label: 'Limpar cache', icon: 'trash-can' },
+  { type: 'SHOW_INFO', label: 'Info do dispositivo', icon: 'information' },
 ];
 
 export function CommandPicker({
@@ -88,20 +89,6 @@ export function CommandPicker({
   return (
     <Box className="border-b border-border bg-surface px-4 py-3">
       <VStack space="sm">
-        <HStack className="justify-between">
-          <Text
-            className="uppercase tracking-[0.8px]"
-            size="xs"
-            tone="muted"
-            weight="semibold"
-          >
-            Comandos
-          </Text>
-          <Text size="xs" tone="muted">
-            Envio imediato
-          </Text>
-        </HStack>
-
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -115,8 +102,8 @@ export function CommandPicker({
               tone="secondary"
               onPress={() => handleCommand(definition)}
             >
-              <HStack space="sm">
-                <Text>{definition.emoji}</Text>
+              <HStack space="xs" style={{ alignItems: 'center' }}>
+                <MaterialCommunityIcons name={definition.icon} size={16} color="#64748B" />
                 <ButtonText
                   className="shrink"
                   variant="outline"

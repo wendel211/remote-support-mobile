@@ -1,5 +1,6 @@
 import React from 'react';
 import { Modal } from 'react-native';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Box, Button, ButtonText, Text, VStack } from '@shared/ui';
 import type { Command } from '../types';
 
@@ -8,12 +9,12 @@ interface CommandModalProps {
   onAcknowledge: () => void;
 }
 
-const COMMAND_EMOJIS: Record<Command['type'], string> = {
-  OPEN_SETTINGS: '⚙️',
-  RESTART_APP: '🔄',
-  NAVIGATE_URL: '🌐',
-  CLEAR_CACHE: '🗑️',
-  SHOW_INFO: 'ℹ️',
+const COMMAND_ICONS: Record<Command['type'], keyof typeof MaterialCommunityIcons.glyphMap> = {
+  OPEN_SETTINGS: 'cog',
+  RESTART_APP: 'restart',
+  NAVIGATE_URL: 'link',
+  CLEAR_CACHE: 'trash-can',
+  SHOW_INFO: 'information',
 };
 
 export function CommandModal({
@@ -30,9 +31,11 @@ export function CommandModal({
       <Box className="flex-1 items-center justify-center bg-black/60 px-8">
         <Box className="w-full rounded-panel bg-surface px-6 py-8 shadow-soft">
           <VStack className="items-center" space="md">
-            <Text className="text-5xl">
-              {command ? COMMAND_EMOJIS[command.type] : ''}
-            </Text>
+            {command ? (
+              <Box className="h-16 w-16 items-center justify-center rounded-full bg-slate-100 shadow-inner">
+                <MaterialCommunityIcons name={COMMAND_ICONS[command.type]} size={36} color="#334155" />
+              </Box>
+            ) : null}
 
             <VStack className="items-center" space="xs">
               <Text

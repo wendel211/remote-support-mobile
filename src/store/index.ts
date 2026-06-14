@@ -15,12 +15,9 @@ export const store = configureStore({
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
-      immutableCheck: {
-        warnAfter: 128,
-        ignoredPaths: ['screenshot'],
-      },
+      immutableCheck: false,
       serializableCheck: {
-        warnAfter: 128,
+        warnAfter: 200,
         ignoredPaths: ['screenshot'],
         ignoredActions: [
           'screenshot/setPendingRequest',
