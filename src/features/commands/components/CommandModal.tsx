@@ -1,5 +1,6 @@
 import React from 'react';
-import { Modal, View, Text, Pressable, StyleSheet } from 'react-native';
+import { Modal } from 'react-native';
+import { Box, Button, ButtonText, Text, VStack } from '@shared/ui';
 import type { Command } from '../types';
 
 interface CommandModalProps {
@@ -26,107 +27,47 @@ export function CommandModal({
       animationType="fade"
       statusBarTranslucent
     >
-      <View style={styles.overlay}>
-        <View style={styles.card}>
-          <Text style={styles.emoji}>
-            {command ? COMMAND_EMOJIS[command.type] : ''}
-          </Text>
+      <Box className="flex-1 items-center justify-center bg-black/60 px-8">
+        <Box className="w-full rounded-panel bg-surface px-6 py-8 shadow-soft">
+          <VStack className="items-center" space="md">
+            <Text className="text-5xl">
+              {command ? COMMAND_EMOJIS[command.type] : ''}
+            </Text>
 
-          <Text style={styles.titleLabel}>Comando recebido</Text>
-
-          <Text style={styles.commandLabel}>{command?.label ?? ''}</Text>
-
-          {command?.type === 'NAVIGATE_URL' && command.payload?.url ? (
-            <View style={styles.urlBadge}>
-              <Text style={styles.urlText} numberOfLines={2}>
-                {command.payload.url}
+            <VStack className="items-center" space="xs">
+              <Text
+                className="uppercase tracking-[0.8px]"
+                size="sm"
+                tone="muted"
+                weight="semibold"
+              >
+                Comando recebido
               </Text>
-            </View>
-          ) : null}
+              <Text className="text-center" size="xl" weight="bold">
+                {command?.label ?? ''}
+              </Text>
+            </VStack>
 
-          <Pressable
-            style={({ pressed }) => [
-              styles.acknowledgeButton,
-              pressed && styles.acknowledgeButtonPressed,
-            ]}
-            onPress={onAcknowledge}
-          >
-            <Text style={styles.acknowledgeButtonText}>Entendido</Text>
-          </Pressable>
-        </View>
-      </View>
+            {command?.type === 'NAVIGATE_URL' && command.payload?.url ? (
+              <Box className="w-full rounded-ui bg-primary-50 px-4 py-3">
+                <Text
+                  className="text-center"
+                  numberOfLines={2}
+                  size="sm"
+                  tone="primary"
+                  weight="medium"
+                >
+                  {command.payload.url}
+                </Text>
+              </Box>
+            ) : null}
+
+            <Button className="mt-2 w-full" onPress={onAcknowledge}>
+              <ButtonText>Entendido</ButtonText>
+            </Button>
+          </VStack>
+        </Box>
+      </Box>
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.55)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 32,
-  },
-  card: {
-    width: '100%',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    paddingHorizontal: 24,
-    paddingVertical: 32,
-    alignItems: 'center',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 24,
-    elevation: 10,
-  },
-  emoji: {
-    fontSize: 48,
-    marginBottom: 16,
-  },
-  titleLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#9CA3AF',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginBottom: 8,
-  },
-  commandLabel: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1A1A2E',
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  urlBadge: {
-    backgroundColor: '#EEF2FF',
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginBottom: 16,
-    width: '100%',
-  },
-  urlText: {
-    fontSize: 13,
-    color: '#4F46E5',
-    fontWeight: '500',
-    textAlign: 'center',
-  },
-  acknowledgeButton: {
-    width: '100%',
-    paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: '#4F46E5',
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  acknowledgeButtonPressed: {
-    opacity: 0.85,
-  },
-  acknowledgeButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-});

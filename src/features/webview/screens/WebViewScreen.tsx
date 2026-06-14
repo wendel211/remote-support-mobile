@@ -1,12 +1,5 @@
 import React, { useRef, useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  Pressable,
-  ActivityIndicator,
-  Animated,
-  StyleSheet,
-} from 'react-native';
+import { ActivityIndicator, Animated } from 'react-native';
 import { WebView } from 'react-native-webview';
 import type {
   WebViewProgressEvent,
@@ -14,6 +7,7 @@ import type {
 } from 'react-native-webview/lib/WebViewTypes';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@navigation/types';
+import { Box, Button, ButtonText, HStack, Text, VStack } from '@shared/ui';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'WebView'>;
 
@@ -81,41 +75,39 @@ export function WebViewScreen({ route, navigation }: Props): React.JSX.Element {
   });
 
   return (
-    <View style={styles.container}>
-      {/* Header customizado */}
-      <View style={styles.header}>
-        <Pressable
-          style={({ pressed }) => [
-            styles.backButton,
-            pressed && styles.backButtonPressed,
-          ]}
+    <Box className="flex-1 bg-surface">
+      <HStack className="border-b border-border bg-surface px-4 pb-3 pt-14">
+        <Button
+          className="min-w-[72px] px-0"
+          variant="ghost"
           onPress={() => navigation.goBack()}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Text style={styles.backButtonText}>← Voltar</Text>
-        </Pressable>
+          <ButtonText variant="ghost">← Voltar</ButtonText>
+        </Button>
 
-        <Text style={styles.headerTitle} numberOfLines={1}>
+        <Text className="flex-1 text-center" numberOfLines={1} weight="semibold">
           {displayTitle}
         </Text>
 
-        {/* Espaçador para centralizar o título */}
-        <View style={styles.headerSpacer} />
-      </View>
+        <Box className="min-w-[72px]" />
+      </HStack>
 
-      {/* Barra de progresso */}
-      <View style={styles.progressBarTrack}>
+      <Box className="h-[3px] overflow-hidden bg-slate-200">
         <Animated.View
-          style={[styles.progressBarFill, { width: progressWidth }]}
+          style={{
+            width: progressWidth,
+            height: 3,
+            backgroundColor: '#315DFF',
+          }}
         />
-      </View>
+      </Box>
 
-      {/* WebView */}
       {!hasError && (
         <WebView
           ref={webViewRef}
           source={{ uri: url }}
-          style={styles.webView}
+          style={{ flex: 1 }}
           onLoadStart={handleLoadStart}
           onLoadEnd={handleLoadEnd}
           onLoadProgress={handleLoadProgress}
@@ -123,129 +115,31 @@ export function WebViewScreen({ route, navigation }: Props): React.JSX.Element {
         />
       )}
 
-      {/* Indicador de carregamento sobreposto */}
       {isLoading && !hasError && (
-        <View style={styles.loadingOverlay} pointerEvents="none">
-          <ActivityIndicator size="large" color="#4F46E5" />
-        </View>
+        <Box
+          className="absolute inset-x-0 bottom-0 top-[120px] items-center justify-center bg-white/85"
+          pointerEvents="none"
+        >
+          <ActivityIndicator size="large" color="#315DFF" />
+        </Box>
       )}
 
-      {/* Tela de erro */}
       {hasError && (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorEmoji}>⚠️</Text>
-          <Text style={styles.errorTitle}>Não foi possível carregar</Text>
-          <Text style={styles.errorMessage}>{url}</Text>
-          <Pressable
-            style={({ pressed }) => [
-              styles.retryButton,
-              pressed && styles.retryButtonPressed,
-            ]}
-            onPress={handleRetry}
-          >
-            <Text style={styles.retryButtonText}>Tentar novamente</Text>
-          </Pressable>
-        </View>
+        <Box className="flex-1 items-center justify-center px-8">
+          <VStack className="items-center" space="md">
+            <Text className="text-5xl">⚠️</Text>
+            <Text className="text-center" size="lg" weight="bold">
+              Não foi possível carregar
+            </Text>
+            <Text className="text-center" size="sm" tone="muted">
+              {url}
+            </Text>
+            <Button className="mt-4 px-8" onPress={handleRetry}>
+              <ButtonText>Tentar novamente</ButtonText>
+            </Button>
+          </VStack>
+        </Box>
       )}
-    </View>
+    </Box>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: 56,
-    paddingBottom: 12,
-    paddingHorizontal: 16,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  backButton: {
-    paddingVertical: 4,
-    paddingHorizontal: 4,
-    minWidth: 72,
-  },
-  backButtonPressed: {
-    opacity: 0.6,
-  },
-  backButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#4F46E5',
-  },
-  headerTitle: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1A1A2E',
-    textAlign: 'center',
-  },
-  headerSpacer: {
-    minWidth: 72,
-  },
-  progressBarTrack: {
-    height: 3,
-    backgroundColor: '#E5E7EB',
-    overflow: 'hidden',
-  },
-  progressBarFill: {
-    height: 3,
-    backgroundColor: '#4F46E5',
-  },
-  webView: {
-    flex: 1,
-  },
-  loadingOverlay: {
-    position: 'absolute',
-    top: 120,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.85)',
-  },
-  errorContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 32,
-  },
-  errorEmoji: {
-    fontSize: 48,
-    marginBottom: 16,
-  },
-  errorTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1A1A2E',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  errorMessage: {
-    fontSize: 13,
-    color: '#6B7280',
-    textAlign: 'center',
-    marginBottom: 32,
-  },
-  retryButton: {
-    paddingVertical: 14,
-    paddingHorizontal: 32,
-    borderRadius: 12,
-    backgroundColor: '#4F46E5',
-  },
-  retryButtonPressed: {
-    opacity: 0.85,
-  },
-  retryButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-});
