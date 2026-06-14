@@ -21,8 +21,10 @@ import {
   setError,
   clearSession,
 } from '@features/session/store';
+import { clearMessages } from '@features/chat/store';
 import type { Session } from '@features/session/types';
 import { StatusBadge } from '@shared/components';
+import { ChatScreen } from '@features/chat/components';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Client'>;
 
@@ -59,6 +61,7 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
               unsubscribeRef.current();
               unsubscribeRef.current = null;
             }
+            dispatch(clearMessages());
             dispatch(clearSession());
             navigation.navigate('RoleSelection');
           } else {
@@ -90,6 +93,7 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
         unsubscribeRef.current = null;
       }
       await endSession(connectedCode);
+      dispatch(clearMessages());
       dispatch(clearSession());
       navigation.navigate('RoleSelection');
     }
@@ -101,21 +105,21 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
 
   if (isConnected) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.emoji}>👤</Text>
-        <Text style={styles.title}>Sessão Ativa</Text>
+      <View style={styles.fullContainer}>
+        <View style={styles.header}>
+          <View style={styles.headerInfo}>
+            <Text style={styles.headerTitle}>👤 Cliente</Text>
+            <Text style={styles.headerCode}>{connectedCode}</Text>
+          </View>
+          <StatusBadge status="connected" />
+        </View>
 
-        <View style={styles.connectedCard}>
+        <View style={styles.connectedBanner}>
           <Text style={styles.connectedIcon}>✅</Text>
           <Text style={styles.connectedText}>Conectado ao Atendente</Text>
         </View>
 
-        <View style={styles.sessionInfoCard}>
-          <Text style={styles.sessionInfoLabel}>Código da sessão</Text>
-          <Text style={styles.sessionInfoCode}>{connectedCode}</Text>
-        </View>
-
-        <StatusBadge status="connected" />
+        <ChatScreen sessionCode={connectedCode} currentRole="client" />
 
         <Pressable
           style={({ pressed }) => [
@@ -131,7 +135,7 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={styles.centeredContainer}>
       <Text style={styles.emoji}>👤</Text>
       <Text style={styles.title}>Entrar na Sessão</Text>
       <Text style={styles.subtitle}>
@@ -189,12 +193,63 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  centeredContainer: {
     flex: 1,
     backgroundColor: '#F0F4FF',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 32,
+  },
+  fullContainer: {
+    flex: 1,
+    backgroundColor: '#F0F4FF',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 56,
+    paddingBottom: 12,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  headerInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1A1A2E',
+  },
+  headerCode: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#0EA5E9',
+    backgroundColor: '#F0F9FF',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  connectedBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#ECFDF5',
+    paddingVertical: 8,
+  },
+  connectedIcon: {
+    fontSize: 14,
+    marginRight: 6,
+  },
+  connectedText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#065F46',
   },
   emoji: {
     fontSize: 48,
@@ -283,58 +338,13 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#6B7280',
   },
-  connectedCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#ECFDF5',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 12,
-    marginTop: 16,
-    marginBottom: 20,
-  },
-  connectedIcon: {
-    fontSize: 18,
-    marginRight: 8,
-  },
-  connectedText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#065F46',
-  },
-  sessionInfoCard: {
-    width: '100%',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    paddingVertical: 20,
-    paddingHorizontal: 20,
-    alignItems: 'center',
-    marginBottom: 20,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  sessionInfoLabel: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#6B7280',
-    marginBottom: 6,
-  },
-  sessionInfoCode: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#0EA5E9',
-    letterSpacing: 6,
-  },
   leaveButton: {
-    width: '100%',
-    paddingVertical: 16,
+    marginHorizontal: 20,
+    marginVertical: 8,
+    paddingVertical: 14,
     borderRadius: 12,
     backgroundColor: '#EF4444',
     alignItems: 'center',
-    marginTop: 32,
   },
   leaveButtonPressed: {
     opacity: 0.85,

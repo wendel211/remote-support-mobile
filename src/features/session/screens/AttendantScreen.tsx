@@ -21,8 +21,10 @@ import {
   setStatus,
   clearSession,
 } from '@features/session/store';
+import { clearMessages } from '@features/chat/store';
 import type { Session, SessionStatus } from '@features/session/types';
 import { StatusBadge } from '@shared/components';
+import { ChatScreen } from '@features/chat/components';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Attendant'>;
 
@@ -87,6 +89,7 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
         unsubscribeRef.current = null;
       }
       await endSession(sessionCode);
+      dispatch(clearMessages());
       dispatch(clearSession());
       navigation.navigate('RoleSelection');
     }
@@ -94,15 +97,46 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
 
   if (isLoading) {
     return (
-      <View style={styles.container}>
+      <View style={styles.centeredContainer}>
         <ActivityIndicator size="large" color="#4F46E5" />
         <Text style={styles.loadingText}>Criando sessão...</Text>
       </View>
     );
   }
 
+  if (currentStatus === 'connected') {
+    return (
+      <View style={styles.fullContainer}>
+        <View style={styles.header}>
+          <View style={styles.headerInfo}>
+            <Text style={styles.headerTitle}>🛠️ Atendente</Text>
+            <Text style={styles.headerCode}>{sessionCode}</Text>
+          </View>
+          <StatusBadge status={currentStatus} />
+        </View>
+
+        <View style={styles.connectedBanner}>
+          <Text style={styles.connectedIcon}>✅</Text>
+          <Text style={styles.connectedText}>Cliente conectado</Text>
+        </View>
+
+        <ChatScreen sessionCode={sessionCode} currentRole="attendant" />
+
+        <Pressable
+          style={({ pressed }) => [
+            styles.endButton,
+            pressed && styles.endButtonPressed,
+          ]}
+          onPress={() => void handleEndSession()}
+        >
+          <Text style={styles.endButtonText}>Encerrar sessão</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
   return (
-    <View style={styles.container}>
+    <View style={styles.centeredContainer}>
       <Text style={styles.emoji}>🛠️</Text>
       <Text style={styles.title}>Painel do Atendente</Text>
 
@@ -115,13 +149,6 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
       </View>
 
       <StatusBadge status={currentStatus} />
-
-      {currentStatus === 'connected' && (
-        <View style={styles.connectedCard}>
-          <Text style={styles.connectedIcon}>✅</Text>
-          <Text style={styles.connectedText}>Cliente conectado</Text>
-        </View>
-      )}
 
       {currentStatus === 'ended' && (
         <View style={styles.endedCard}>
@@ -144,12 +171,63 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  centeredContainer: {
     flex: 1,
     backgroundColor: '#F0F4FF',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 32,
+  },
+  fullContainer: {
+    flex: 1,
+    backgroundColor: '#F0F4FF',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 56,
+    paddingBottom: 12,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  headerInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1A1A2E',
+  },
+  headerCode: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#4F46E5',
+    backgroundColor: '#EEF2FF',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  connectedBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#ECFDF5',
+    paddingVertical: 8,
+  },
+  connectedIcon: {
+    fontSize: 14,
+    marginRight: 6,
+  },
+  connectedText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#065F46',
   },
   loadingText: {
     fontSize: 16,
@@ -197,24 +275,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#9CA3AF',
   },
-  connectedCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#ECFDF5',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 12,
-    marginTop: 20,
-  },
-  connectedIcon: {
-    fontSize: 18,
-    marginRight: 8,
-  },
-  connectedText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#065F46',
-  },
   endedCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -234,12 +294,12 @@ const styles = StyleSheet.create({
     color: '#991B1B',
   },
   endButton: {
-    width: '100%',
-    paddingVertical: 16,
+    marginHorizontal: 20,
+    marginVertical: 8,
+    paddingVertical: 14,
     borderRadius: 12,
     backgroundColor: '#EF4444',
     alignItems: 'center',
-    marginTop: 32,
   },
   endButtonPressed: {
     opacity: 0.85,
