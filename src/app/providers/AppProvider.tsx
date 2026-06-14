@@ -1,7 +1,7 @@
 import React from 'react';
 import { Provider as ReduxProvider } from 'react-redux';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { store } from 'store/index';
+import { store } from '@store/index';
 
 interface AppProviderProps {
   children: React.ReactNode;
