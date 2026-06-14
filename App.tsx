@@ -1,20 +1,38 @@
-import { StatusBar } from 'expo-status-bar';
+import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+import { AppProvider } from '@app/providers';
 
-export default function App() {
+// Inicializa o Firebase na importação
+import '@services/firebase';
+
+export default function App(): React.JSX.Element {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <AppProvider>
+      <View style={styles.container}>
+        <Text style={styles.title}>Remote Support</Text>
+        <Text style={styles.subtitle}>Inicializando...</Text>
+        <StatusBar style="auto" />
+      </View>
+    </AppProvider>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#F0F4FF',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#1A1A2E',
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginTop: 8,
   },
 });
