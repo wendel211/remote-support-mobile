@@ -1,1 +1,6 @@
-export { app, database } from '@services/firebase';
+export {
+  sendCommand,
+  acknowledgeCommand,
+  listenToPendingCommand,
+  clearCommands,
+} from './commandsService';

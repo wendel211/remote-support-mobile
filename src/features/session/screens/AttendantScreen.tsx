@@ -37,6 +37,12 @@ import {
   ScreenshotButton,
   ScreenshotViewer,
 } from '@features/screenshot';
+import {
+  sendCommand,
+  addSentCommand,
+  CommandPicker,
+} from '@features/commands';
+import type { Command } from '@features/commands';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Attendant'>;
 
@@ -176,6 +182,23 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
             isLoading={isSending}
           />
         </View>
+
+        <CommandPicker
+          sessionCode={sessionCode}
+          onSend={(cmd) => {
+            void (async () => {
+              const id = await sendCommand(sessionCode, cmd);
+              dispatch(
+                addSentCommand({
+                  ...cmd,
+                  id,
+                  sentAt: Date.now(),
+                  acknowledgedAt: null,
+                } as Command),
+              );
+            })();
+          }}
+        />
 
         <ChatScreen sessionCode={sessionCode} currentRole="attendant" />
 

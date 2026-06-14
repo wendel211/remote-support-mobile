@@ -27,6 +27,12 @@ import { StatusBadge } from '@shared/components';
 import { ChatScreen } from '@features/chat/components';
 import ViewShot from 'react-native-view-shot';
 import { useScreenshotCapture } from '@features/screenshot';
+import {
+  listenToPendingCommand,
+  acknowledgeCommand,
+  setPendingCommand,
+  CommandModal,
+} from '@features/commands';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Client'>;
 
@@ -38,6 +44,10 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
   const [isConnected, setIsConnected] = useState(false);
   const [connectedCode, setConnectedCode] = useState('');
   const unsubscribeRef = useRef<(() => void) | null>(null);
+
+  const pendingCommand = useAppSelector(
+    (state) => state.commands.pendingCommand,
+  );
 
   const { captureRef, isSending } = useScreenshotCapture(connectedCode);
 
@@ -90,6 +100,23 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
     };
   }, []);
 
+  useEffect(() => {
+    if (!connectedCode) {
+      return undefined;
+    }
+
+    const unsubscribeCommands = listenToPendingCommand(
+      connectedCode,
+      (command) => {
+        dispatch(setPendingCommand(command));
+      },
+    );
+
+    return () => {
+      unsubscribeCommands();
+    };
+  }, [connectedCode, dispatch]);
+
   const handleLeaveSession = useCallback(async () => {
     if (connectedCode) {
       if (unsubscribeRef.current) {
@@ -140,6 +167,24 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
         >
           <Text style={styles.leaveButtonText}>Sair da sessão</Text>
         </Pressable>
+
+        <CommandModal
+          command={pendingCommand}
+          onAcknowledge={() => {
+            if (pendingCommand) {
+              void acknowledgeCommand(connectedCode, pendingCommand.id);
+              if (
+                pendingCommand.type === 'NAVIGATE_URL' &&
+                pendingCommand.payload?.url
+              ) {
+                navigation.navigate('WebView', {
+                  url: pendingCommand.payload.url,
+                });
+              }
+              dispatch(setPendingCommand(null));
+            }
+          }}
+        />
       </ViewShot>
     );
   }

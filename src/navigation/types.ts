@@ -4,6 +4,7 @@ export type RootStackParamList = {
   RoleSelection: undefined;
   Attendant: undefined;
   Client: undefined;
+  WebView: { url: string };
 };
 
 export type RootStackScreenProps<T extends keyof RootStackParamList> =
