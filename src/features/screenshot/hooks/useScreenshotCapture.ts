@@ -12,7 +12,7 @@ import { listenToScreenshotRequest, sendScreenshot } from '../services';
 export function useScreenshotCapture(sessionCode: string) {
   const dispatch = useAppDispatch();
   const isSending = useAppSelector((state) => state.screenshot.isSending);
-  const captureRef = useRef<ViewShot | null>(null);
+  const captureRef = useRef<InstanceType<typeof ViewShot> | null>(null);
 
   const captureAndSend = async (): Promise<void> => {
     if (!captureRef.current) {
