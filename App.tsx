@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { AppProvider } from '@app/providers';
 import { RootNavigator } from '@navigation/index';
+import './global.css';
 
 // Inicializa o Firebase na importação
 import '@services/firebase';
