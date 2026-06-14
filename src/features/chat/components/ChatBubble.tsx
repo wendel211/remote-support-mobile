@@ -46,14 +46,14 @@ export function ChatBubble({
   };
 
   const bubbleClass = isOwn
-    ? 'self-end rounded-br bg-primary-600'
-    : 'self-start rounded-bl bg-slate-200';
+    ? 'self-end rounded-br-md bg-primary-600'
+    : 'self-start rounded-bl-md bg-slate-200';
   const textClass = isOwn ? 'text-white' : 'text-foreground';
   const metaClass = isOwn ? 'text-white/70' : 'text-slate-500';
 
   return (
     <Box className="px-3 py-1">
-      <Box className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 ${bubbleClass}`}>
+      <Box className={`max-w-[82%] rounded-2xl px-3.5 py-2.5 ${bubbleClass}`}>
         {isUrl ? (
           <Pressable className="items-start" onPress={handlePressUrl}>
             <Text className={`underline ${textClass}`} size="sm">
@@ -74,7 +74,7 @@ export function ChatBubble({
             </Box>
           </Pressable>
         ) : (
-          <Text className={textClass} size="sm">
+          <Text className={`leading-5 ${textClass}`} size="sm">
             {message.text}
           </Text>
         )}

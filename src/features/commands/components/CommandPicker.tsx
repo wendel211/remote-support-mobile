@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, Platform } from 'react-native';
+import { Alert, Platform, ScrollView } from 'react-native';
 import {
   Box,
   Button,
@@ -23,11 +23,11 @@ interface CommandDefinition {
 }
 
 const COMMAND_DEFINITIONS: CommandDefinition[] = [
-  { type: 'OPEN_SETTINGS', label: 'Abrir configurações', emoji: '⚙️' },
-  { type: 'RESTART_APP', label: 'Reiniciar aplicativo', emoji: '🔄' },
-  { type: 'NAVIGATE_URL', label: 'Navegar para URL', emoji: '🌐' },
+  { type: 'OPEN_SETTINGS', label: 'Configurações', emoji: '⚙️' },
+  { type: 'RESTART_APP', label: 'Reiniciar app', emoji: '🔄' },
+  { type: 'NAVIGATE_URL', label: 'Abrir URL', emoji: '🌐' },
   { type: 'CLEAR_CACHE', label: 'Limpar cache', emoji: '🗑️' },
-  { type: 'SHOW_INFO', label: 'Mostrar informações do dispositivo', emoji: 'ℹ️' },
+  { type: 'SHOW_INFO', label: 'Info do dispositivo', emoji: 'ℹ️' },
 ];
 
 export function CommandPicker({
@@ -86,38 +86,53 @@ export function CommandPicker({
   };
 
   return (
-    <Box className="border-b border-border bg-surface px-5 py-3">
-      <VStack space="md">
-        <Text
-          className="uppercase tracking-[0.8px]"
-          size="xs"
-          tone="muted"
-          weight="semibold"
-        >
-          Comandos predefinidos
-        </Text>
+    <Box className="border-b border-border bg-surface px-4 py-3">
+      <VStack space="sm">
+        <HStack className="justify-between">
+          <Text
+            className="uppercase tracking-[0.8px]"
+            size="xs"
+            tone="muted"
+            weight="semibold"
+          >
+            Comandos
+          </Text>
+          <Text size="xs" tone="muted">
+            Envio imediato
+          </Text>
+        </HStack>
 
-        <VStack space="sm">
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ gap: 8, paddingRight: 4 }}
+        >
           {COMMAND_DEFINITIONS.map((definition) => (
             <Button
               key={definition.type}
-              className="justify-start"
+              className="min-h-10 justify-start px-3"
               variant="outline"
               tone="secondary"
               onPress={() => handleCommand(definition)}
             >
               <HStack space="sm">
                 <Text>{definition.emoji}</Text>
-                <ButtonText variant="outline" tone="secondary" size="sm">
+                <ButtonText
+                  className="shrink"
+                  variant="outline"
+                  tone="secondary"
+                  size="sm"
+                  numberOfLines={1}
+                >
                   {definition.label}
                 </ButtonText>
               </HStack>
             </Button>
           ))}
-        </VStack>
+        </ScrollView>
 
         {showUrlInput && (
-          <Box className="rounded-ui border border-primary-100 bg-primary-50 p-3">
+          <Box className="mt-1 rounded-ui border border-primary-100 bg-primary-50 p-3">
             <VStack space="sm">
               <Text size="xs" tone="primary" weight="semibold">
                 URL de destino

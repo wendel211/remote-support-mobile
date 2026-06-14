@@ -70,9 +70,9 @@ export function ChatInput({
   const isSendDisabled = text.trim().length === 0 || disabled;
 
   return (
-    <HStack className="items-end border-t border-border bg-surface px-3 py-2" space="sm">
+    <HStack className="items-end border-t border-border bg-surface px-4 py-3" space="sm">
       <Input
-        className="max-h-[100px] flex-1 rounded-full bg-slate-100"
+        className="max-h-[96px] min-h-11 flex-1 rounded-ui bg-slate-100"
         value={text}
         onChangeText={handleChangeText}
         placeholder="Digite uma mensagem..."
@@ -80,7 +80,7 @@ export function ChatInput({
         editable={!disabled}
       />
       <Button
-        className="min-h-11 rounded-full px-5"
+        className="min-h-11 rounded-ui px-4"
         disabled={isSendDisabled}
         onPress={handleSend}
       >

@@ -145,7 +145,7 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
     return (
       <ViewShot ref={captureRef} style={{ flex: 1 }}>
         <Box className="flex-1 bg-background">
-          <HStack className="justify-between border-b border-border bg-surface px-5 pb-3 pt-14">
+          <HStack className="justify-between border-b border-border bg-surface px-4 pb-3 pt-14">
             <HStack space="sm">
               <Text size="lg" weight="bold">
                 👤 Cliente
@@ -156,7 +156,7 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
                 </Text>
               </Box>
             </HStack>
-          <StatusBadge status="connected" />
+            <StatusBadge status="connected" />
           </HStack>
 
           {isSending && (
@@ -171,7 +171,7 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
             </Box>
           )}
 
-          <HStack className="justify-center bg-accent-50 py-2" space="sm">
+          <HStack className="justify-center bg-accent-50 py-1.5" space="sm">
             <Text size="sm">✅</Text>
             <Text className="text-accent-600" size="sm" weight="semibold">
               Conectado ao atendente
@@ -181,7 +181,7 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
           <ChatScreen sessionCode={connectedCode} currentRole="client" />
 
           <Button
-            className="mx-5 my-2"
+            className="mx-4 my-2 min-h-11"
             tone="danger"
             onPress={() => void handleLeaveSession()}
           >

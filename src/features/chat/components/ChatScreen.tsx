@@ -1,10 +1,8 @@
 import React, { useEffect, useCallback } from 'react';
 import {
-  View,
   FlatList,
   KeyboardAvoidingView,
   Platform,
-  StyleSheet,
 } from 'react-native';
 import { useAppDispatch, useAppSelector } from '@store/hooks';
 import {
@@ -122,17 +120,17 @@ export function ChatScreen({
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      className="flex-1 bg-background"
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
       <FlatList
-        style={styles.messagesList}
+        className="flex-1"
         data={messages}
         renderItem={renderItem}
         keyExtractor={keyExtractor}
         inverted
-        contentContainerStyle={styles.messagesContent}
+        contentContainerStyle={{ paddingVertical: 10 }}
         ListHeaderComponent={
           <TypingIndicator visible={isTyping} role={oppositeRole} />
         }
@@ -144,16 +142,3 @@ export function ChatScreen({
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F0F4FF',
-  },
-  messagesList: {
-    flex: 1,
-  },
-  messagesContent: {
-    paddingVertical: 8,
-  },
-});

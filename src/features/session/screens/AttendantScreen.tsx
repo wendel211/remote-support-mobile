@@ -197,7 +197,7 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
   if (currentStatus === 'connected') {
     return (
       <Box className="flex-1 bg-background">
-        <HStack className="justify-between border-b border-border bg-surface px-5 pb-3 pt-14">
+        <HStack className="justify-between border-b border-border bg-surface px-4 pb-3 pt-14">
           <HStack space="sm">
             <Text size="lg" weight="bold">
               🛠️ Atendente
@@ -211,14 +211,14 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
           <StatusBadge status={currentStatus} />
         </HStack>
 
-        <HStack className="justify-center bg-accent-50 py-2" space="sm">
+        <HStack className="justify-center bg-accent-50 py-1.5" space="sm">
           <Text size="sm">✅</Text>
           <Text className="text-accent-600" size="sm" weight="semibold">
             Cliente conectado
           </Text>
         </HStack>
 
-        <Box className="border-b border-border bg-surface px-5 py-3">
+        <Box className="border-b border-border bg-surface px-4 py-2.5">
           <ScreenshotButton
             onPress={() => void handleRequestScreenshot()}
             isLoading={isSending}
@@ -245,7 +245,7 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
         <ChatScreen sessionCode={sessionCode} currentRole="attendant" />
 
         <Button
-          className="mx-5 my-2"
+          className="mx-4 my-2 min-h-11"
           tone="danger"
           onPress={() => void handleEndSession()}
         >

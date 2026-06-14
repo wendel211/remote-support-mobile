@@ -12,14 +12,14 @@ export function ScreenshotButton({
   isLoading,
 }: ScreenshotButtonProps): React.JSX.Element {
   return (
-    <Button disabled={isLoading} onPress={onPress}>
+    <Button className="min-h-11" disabled={isLoading} onPress={onPress}>
       <HStack space="sm">
         {isLoading ? (
           <ActivityIndicator size="small" color="#FFFFFF" />
         ) : (
           <Text tone="inverse">📷</Text>
         )}
-        <ButtonText>
+        <ButtonText size="sm">
           {isLoading ? 'Solicitando...' : 'Solicitar screenshot'}
         </ButtonText>
       </HStack>
