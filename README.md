@@ -89,6 +89,25 @@ sessions/{code}
 
 Para desenvolvimento, configure regras adequadas ao ambiente de teste. Em producao, as regras devem ser endurecidas com autenticacao e validacao por sessao.
 
+Regras de desenvolvimento para o desafio:
+
+```json
+{
+  "rules": {
+    "sessions": {
+      "$sessionCode": {
+        ".read": true,
+        ".write": true
+      }
+    }
+  }
+}
+```
+
+No Firebase Console, acesse Realtime Database > Rules, cole o conteudo acima e publique. O mesmo conteudo esta em `database.rules.json`.
+
+Se o app mostrar `Permissao negada no Firebase`, significa que o banco atual esta com regras mais restritivas ou que a variavel `EXPO_PUBLIC_FIREBASE_DATABASE_URL` aponta para outro projeto/banco.
+
 ## Execucao
 
 Iniciar o Expo:

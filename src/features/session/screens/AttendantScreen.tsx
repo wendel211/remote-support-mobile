@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { ActivityIndicator } from 'react-native';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@navigation/types';
 import { useAppDispatch, useAppSelector } from '@store/hooks';
@@ -47,7 +49,9 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Attendant'>;
 
 export function AttendantScreen({ navigation }: Props): React.JSX.Element {
   const dispatch = useAppDispatch();
+  const insets = useSafeAreaInsets();
   const [isLoading, setIsLoading] = useState(true);
+  const [initError, setInitError] = useState<string | null>(null);
   const [sessionCode, setSessionCode] = useState('');
   const [currentStatus, setCurrentStatus] = useState<SessionStatus>('idle');
   const unsubscribeRef = useRef<(() => void) | null>(null);
@@ -124,6 +128,7 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
 
   const initSession = useCallback(async () => {
     setIsLoading(true);
+    setInitError(null);
     const code = generateSessionCode();
     setSessionCode(code);
 
@@ -154,6 +159,11 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
           }
         },
       );
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : 'Erro ao criar sessao.';
+      setInitError(message);
+      setCurrentStatus('idle');
     } finally {
       setIsLoading(false);
     }
@@ -185,40 +195,101 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
 
   if (isLoading) {
     return (
-      <Box className="flex-1 items-center justify-center bg-background px-8">
-        <ActivityIndicator size="large" color="#4F46E5" />
-        <Text className="mt-4" tone="muted">
-          Criando sessão...
+      <Box className="flex-1 items-center justify-center bg-[#F3F4F6] px-8">
+        <ActivityIndicator size="large" color="#2563EB" />
+        <Text className="mt-4 text-[14px] text-[#64748B]">
+          Criando sessao...
         </Text>
+      </Box>
+    );
+  }
+
+  if (initError) {
+    return (
+      <Box
+        className="flex-1 bg-[#F3F4F6] px-7"
+        style={{
+          paddingTop: Math.max(insets.top, 24) + 16,
+          paddingBottom: Math.max(insets.bottom, 20),
+        }}
+      >
+        <VStack className="flex-1 justify-center" space="xl">
+          <VStack className="items-center" space="md">
+            <Box className="h-16 w-16 items-center justify-center rounded-2xl bg-red-50">
+              <MaterialCommunityIcons name="database-alert" size={36} color="#DC2626" />
+            </Box>
+            <VStack className="items-center" space="xs">
+              <Text className="text-[25px] leading-[30px] text-black" weight="bold">
+                Nao foi possivel criar a sessao
+              </Text>
+              <Text className="max-w-[270px] text-center text-[13px] leading-[19px] text-[#64748B]">
+                {initError}
+              </Text>
+            </VStack>
+          </VStack>
+
+          <VStack space="md">
+            <Button className="min-h-12" onPress={() => void initSession()}>
+              <ButtonText>Tentar novamente</ButtonText>
+            </Button>
+
+            <Button
+              className="min-h-12"
+              variant="outline"
+              tone="secondary"
+              onPress={() => navigation.navigate('RoleSelection')}
+            >
+              <ButtonText variant="outline" tone="secondary">
+                Voltar
+              </ButtonText>
+            </Button>
+          </VStack>
+        </VStack>
       </Box>
     );
   }
 
   if (currentStatus === 'connected') {
     return (
-      <Box className="flex-1 bg-background">
-        <HStack className="justify-between border-b border-border bg-surface px-4 pb-3 pt-14">
-          <HStack space="sm">
-            <Text size="lg" weight="bold">
-              🛠️ Atendente
-            </Text>
-            <Box className="rounded-ui bg-primary-50 px-3 py-1">
-              <Text size="sm" tone="primary" weight="semibold">
-                {sessionCode}
-              </Text>
-            </Box>
+      <Box className="flex-1 bg-[#F3F4F6]">
+        <VStack
+          className="bg-[#F3F4F6] px-4 pb-3"
+          style={{ paddingTop: Math.max(insets.top, 24) + 10 }}
+          space="sm"
+        >
+          <HStack className="items-center justify-between rounded-2xl border border-[#E2E8F0] bg-white px-4 py-3 shadow-sm">
+            <HStack className="items-center" space="sm">
+              <Box className="h-11 w-11 items-center justify-center rounded-xl bg-[#F1F5F9]">
+                <AttendantIcon />
+              </Box>
+              <VStack space="xs">
+                <Text className="text-[16px] leading-[19px] text-[#0F172A]" weight="bold">
+                  Atendente
+                </Text>
+                <Text className="text-[11px] leading-[13px] text-[#64748B]">
+                  Sessao ativa
+                </Text>
+              </VStack>
+            </HStack>
+            <VStack className="items-end" space="xs">
+              <Box className="rounded-md bg-[#EAF2FF] px-2.5 py-1">
+                <Text className="text-[12px] leading-4 text-[#2563EB]" weight="bold">
+                  {sessionCode}
+                </Text>
+              </Box>
+              <StatusBadge status={currentStatus} />
+            </VStack>
           </HStack>
-          <StatusBadge status={currentStatus} />
-        </HStack>
 
-        <HStack className="justify-center bg-accent-50 py-1.5" space="sm">
-          <Text size="sm">✅</Text>
-          <Text className="text-accent-600" size="sm" weight="semibold">
-            Cliente conectado
-          </Text>
-        </HStack>
+          <HStack className="justify-center rounded-xl bg-[#ECFDF5] py-2" space="sm">
+            <ConnectedIcon />
+            <Text className="text-[12px] leading-4 text-[#059669]" weight="semibold">
+              Cliente conectado
+            </Text>
+          </HStack>
+        </VStack>
 
-        <Box className="border-b border-border bg-surface px-4 py-2.5">
+        <Box className="border-y border-[#E2E8F0] bg-white px-4 py-3">
           <ScreenshotButton
             onPress={() => void handleRequestScreenshot()}
             isLoading={isSending}
@@ -244,13 +315,15 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
 
         <ChatScreen sessionCode={sessionCode} currentRole="attendant" />
 
-        <Button
-          className="mx-4 my-2 min-h-11"
-          tone="danger"
-          onPress={() => void handleEndSession()}
-        >
-          <ButtonText tone="danger">Encerrar sessão</ButtonText>
-        </Button>
+        <Box className="bg-white px-4 py-3">
+          <Button
+            className="min-h-12"
+            tone="danger"
+            onPress={() => void handleEndSession()}
+          >
+            <ButtonText tone="danger">Encerrar sessao</ButtonText>
+          </Button>
+        </Box>
 
         <ScreenshotViewer
           base64={lastScreenshot}
@@ -261,50 +334,80 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
   }
 
   return (
-    <Box className="flex-1 justify-center bg-background px-6">
-      <VStack space="xl">
-        <VStack className="items-center" space="sm">
-          <Text className="text-5xl">🛠️</Text>
-          <Text size="2xl" weight="bold">
-            Painel do Atendente
-          </Text>
-          <Text className="text-center leading-5" size="sm" tone="muted">
-            Gere uma sessão e aguarde o cliente entrar pelo código.
-          </Text>
+    <Box
+      className="flex-1 bg-[#F3F4F6] px-7"
+      style={{
+        paddingTop: Math.max(insets.top, 24) + 16,
+        paddingBottom: Math.max(insets.bottom, 20),
+      }}
+    >
+      <VStack className="flex-1 justify-center" space="xl">
+        <VStack className="items-center" space="md">
+          <Box className="h-16 w-16 items-center justify-center rounded-2xl bg-[#F1F5F9]">
+            <AttendantIcon large />
+          </Box>
+          <VStack className="items-center" space="xs">
+            <Text className="text-[25px] leading-[30px] text-black" weight="bold">
+              Painel do atendente
+            </Text>
+            <Text className="max-w-[250px] text-center text-[13px] leading-[19px] text-[#64748B]">
+              Compartilhe o codigo abaixo e aguarde o cliente autorizar a
+              conexao.
+            </Text>
+          </VStack>
         </VStack>
 
-        <Box className="rounded-panel border border-border bg-surface px-5 py-6 shadow-soft">
-          <VStack className="items-center" space="sm">
-            <Text size="sm" tone="muted" weight="medium">
-              Código da sessão
+        <Box className="rounded-2xl border border-[#E2E8F0] bg-white px-5 py-6 shadow-sm">
+          <VStack className="items-center" space="md">
+            <Text className="text-[12px] leading-4 text-[#64748B]" weight="semibold">
+              Codigo da sessao
             </Text>
-            <Text className="text-4xl tracking-[6px]" tone="primary" weight="bold">
+            <Text className="text-[38px] leading-[44px] tracking-[7px] text-[#2563EB]" weight="bold">
               {sessionCode}
             </Text>
-            <Text size="xs" tone="muted">
-              Compartilhe este código com o cliente
+            <Text className="text-center text-[12px] leading-[17px] text-[#64748B]">
+              O cliente usa este codigo para entrar no atendimento.
             </Text>
           </VStack>
         </Box>
 
-        <StatusBadge status={currentStatus} />
+        <VStack space="md">
+          <StatusBadge status={currentStatus} />
 
-        {currentStatus === 'ended' && (
-          <HStack
-            className="justify-center rounded-ui border border-red-100 bg-danger-50 px-5 py-3"
-            space="sm"
+          {currentStatus === 'ended' && (
+            <HStack
+              className="justify-center rounded-xl border border-red-100 bg-danger-50 px-5 py-3"
+              space="sm"
+            >
+              <Text className="text-[13px] text-danger-600" weight="semibold">
+                Sessao encerrada
+              </Text>
+            </HStack>
+          )}
+
+          <Button
+            className="min-h-12"
+            tone="danger"
+            onPress={() => void handleEndSession()}
           >
-            <Text>🔴</Text>
-            <Text tone="danger" weight="semibold">
-              Sessão encerrada
-            </Text>
-          </HStack>
-        )}
-
-        <Button tone="danger" onPress={() => void handleEndSession()}>
-          <ButtonText tone="danger">Encerrar sessão</ButtonText>
-        </Button>
+            <ButtonText tone="danger">Encerrar sessao</ButtonText>
+          </Button>
+        </VStack>
       </VStack>
+    </Box>
+  );
+}
+
+function AttendantIcon({ large = false }: { large?: boolean }): React.JSX.Element {
+  return (
+    <MaterialCommunityIcons name="tools" size={large ? 36 : 27} color="#475569" />
+  );
+}
+
+function ConnectedIcon(): React.JSX.Element {
+  return (
+    <Box className="h-[14px] w-[14px] items-center justify-center rounded-full bg-[#059669]">
+      <MaterialCommunityIcons name="check" size={10} color="#FFFFFF" />
     </Box>
   );
 }
