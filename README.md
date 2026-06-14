@@ -1,6 +1,6 @@
 # Remote Support Mobile
 
-Aplicativo React Native com Expo para suporte tecnico remoto em tempo real. O app possui dois perfis, Atendente e Cliente, pareados por codigo de sessao. Durante a sessao, os usuarios podem trocar mensagens, solicitar screenshot, enviar comandos predefinidos e abrir URLs em uma WebView in-app.
+Aplicativo React Native com Expo para suporte tecnico remoto em tempo real. O app possui dois perfis, Atendente e Cliente, pareados por codigo de sessao. Durante a sessao, os usuarios podem trocar mensagens, solicitar captura da tela do app do Cliente, enviar comandos predefinidos e abrir URLs em uma WebView in-app.
 
 ## Stack
 
@@ -21,8 +21,8 @@ Aplicativo React Native com Expo para suporte tecnico remoto em tempo real. O ap
 - Cliente entra usando o codigo informado pelo atendente.
 - Status de sessao em tempo real: aguardando, conectado e encerrado.
 - Chat bidirecional com indicador de digitacao.
-- Solicitacao de screenshot do Cliente pelo Atendente.
-- Visualizador dedicado para screenshot recebido.
+- Solicitacao de captura da tela renderizada do app do Cliente pelo Atendente.
+- Visualizador dedicado para captura recebida.
 - Comandos predefinidos enviados do Atendente para o Cliente.
 - Comando de navegacao abre URL em WebView in-app.
 - WebView tambem pode ser aberta por links enviados no chat.
@@ -161,7 +161,7 @@ npx expo install --check
 5. Com a sessao conectada, teste:
    - mensagens nos dois sentidos;
    - indicador de digitacao;
-   - solicitacao de screenshot pelo Atendente;
+   - solicitacao de captura da tela do app pelo Atendente;
    - comandos predefinidos;
    - comando de URL abrindo WebView;
    - encerramento da sessao por qualquer perfil.
@@ -193,7 +193,7 @@ As features mantem seus componentes, services, stores e tipos proximos. Codigo c
 - Firebase Realtime Database foi escolhido para reduzir complexidade de servidor e entregar comunicacao em tempo real sem backend Node dedicado.
 - Redux Toolkit centraliza estados compartilhados de sessao, chat, comandos, screenshot e performance.
 - Gluestack UI com NativeWind fornece uma base visual consistente e reduz repeticao de `StyleSheet`.
-- `react-native-view-shot` captura a superficie renderizada do app do Cliente para envio imediato ao Atendente.
+- `react-native-view-shot` captura a superficie renderizada do app do Cliente para envio imediato ao Atendente. Em Expo, esta abordagem evita permissoes nativas sensiveis para captura da tela inteira do sistema operacional.
 - WebView in-app evita abrir navegador externo durante o suporte.
 
 ## Performance
@@ -221,7 +221,9 @@ O desafio exige um video de 1 a 3 minutos. O video deve mostrar:
 - selecao de perfil;
 - pareamento por codigo;
 - chat em tempo real;
-- solicitacao e visualizacao de screenshot;
+- solicitacao de captura pelo Atendente;
+- envio automatico da captura da tela do app pelo Cliente;
+- visualizacao da captura recebida no visualizador dedicado;
 - envio de comandos;
 - WebView in-app;
 - relatorio de performance no console ao encerrar a sessao.

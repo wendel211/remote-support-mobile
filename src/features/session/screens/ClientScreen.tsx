@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { ActivityIndicator, Modal, Keyboard, KeyboardAvoidingView, Platform } from 'react-native';
+import { ActivityIndicator, Linking, Modal, Keyboard, KeyboardAvoidingView, Platform } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -17,11 +17,10 @@ import {
   clearSession,
 } from '@features/session/store';
 import { clearMessages } from '@features/chat/store';
-import { sendMessage } from '@features/chat';
 import type { Session } from '@features/session/types';
 import { StatusBadge } from '@shared/components';
 import { ChatScreen } from '@features/chat/components';
-import { useScreenshotCapture, clearScreenshot, sendScreenshotError } from '@features/screenshot';
+import { useScreenshotCapture, clearScreenshot } from '@features/screenshot';
 import {
   listenToPendingCommand,
   acknowledgeCommand,
@@ -69,7 +68,7 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
     (state) => state.commands.pendingCommand,
   );
 
-  const { viewRef, isSending, captureAndSend } = useScreenshotCapture(connectedCode);
+  const { viewRef, isSending } = useScreenshotCapture(connectedCode);
 
   const handleJoinSession = useCallback(async () => {
     if (code.length !== 6) {
@@ -240,17 +239,6 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
         <ChatScreen
           sessionCode={connectedCode}
           currentRole="client"
-          onApproveScreenshot={captureAndSend}
-          onDeclineScreenshot={async () => {
-            await sendScreenshotError(connectedCode, 'A solicitação de captura de tela foi recusada pelo cliente.');
-            await sendMessage(connectedCode, {
-              sessionCode: connectedCode,
-              text: 'Solicitação de captura de tela recusada pelo cliente.',
-              role: 'system',
-              status: 'sent',
-              timestamp: Date.now(),
-            });
-          }}
         />
 
         {!isKeyboardVisible && (
@@ -276,6 +264,9 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
           onAcknowledge={() => {
             if (pendingCommand) {
               void acknowledgeCommand(connectedCode, pendingCommand.id);
+              if (pendingCommand.type === 'OPEN_SETTINGS') {
+                void Linking.openSettings();
+              }
               if (
                 pendingCommand.type === 'NAVIGATE_URL' &&
                 pendingCommand.payload?.url

@@ -9,8 +9,9 @@ interface TypingIndicatorProps {
 }
 
 const ROLE_LABELS: Record<MessageRole, string> = {
-  attendant: 'Atendente está digitando...',
-  client: 'Cliente está digitando...',
+  attendant: 'Atendente esta digitando...',
+  client: 'Cliente esta digitando...',
+  system: '',
 };
 
 export function TypingIndicator({
@@ -46,7 +47,7 @@ export function TypingIndicator({
     return undefined;
   }, [visible, opacity]);
 
-  if (!visible) {
+  if (!visible || role === 'system') {
     return null;
   }
 

@@ -42,7 +42,7 @@ import {
   acknowledgeCommand,
 } from '@features/commands';
 import type { Command } from '@features/commands';
-import { Box, Button, ButtonText, HStack, Text, VStack } from '@shared/ui';
+import { Box, Button, ButtonText, HStack, Input, Text, VStack } from '@shared/ui';
 
 import { usePerformanceMonitor, useRenderMetric } from '@features/performance';
 
@@ -56,6 +56,7 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
   const [sessionCode, setSessionCode] = useState('');
   const [currentStatus, setCurrentStatus] = useState<SessionStatus>('idle');
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+  const [supportUrl, setSupportUrl] = useState('https://support.google.com');
   const unsubscribeRef = useRef<(() => void) | null>(null);
   const prevStatusRef = useRef<SessionStatus>('idle');
 
@@ -80,12 +81,10 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
   );
 
   const handleRequestScreenshot = useCallback(async () => {
-    console.log('[ATTENDANT] handleRequestScreenshot chamado. sessionCode:', sessionCode);
     dispatch(setIsSending(true));
     dispatch(setError(null));
     try {
       await requestScreenshot(sessionCode);
-      console.log('[ATTENDANT] requestScreenshot gravado com sucesso no Firebase.');
       await sendMessage(sessionCode, {
         sessionCode,
         text: 'Captura de tela solicitada pelo atendente.',
@@ -97,24 +96,19 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
       dispatch(setIsSending(false));
       const errorMessage =
         err instanceof Error ? err.message : 'Erro ao solicitar screenshot';
-      console.error('[ATTENDANT] Erro ao gravar requestScreenshot:', errorMessage);
       dispatch(setError(errorMessage));
     }
   }, [sessionCode, dispatch]);
 
   useEffect(() => {
     if (currentStatus !== 'connected' || !sessionCode) {
-      console.log('[ATTENDANT] listenToScreenshotRequest desativado. Status:', currentStatus, 'Code:', sessionCode);
       return undefined;
     }
 
-    console.log('[ATTENDANT] Ativando listenToScreenshotRequest para:', sessionCode);
     const unsub = listenToScreenshotRequest(sessionCode, (request) => {
-      console.log('[ATTENDANT] listenToScreenshotRequest detectou mudanca:', request);
       dispatch(setPendingRequest(request));
 
       if (request?.error) {
-        console.log('[ATTENDANT] Request retornou erro do cliente:', request.error);
         dispatch(setError(request.error));
         dispatch(setIsSending(false));
         void clearScreenshotRequest(sessionCode);
@@ -122,7 +116,6 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
       }
 
       if (request && request.sentAt !== null && request.base64) {
-        console.log('[ATTENDANT] Screenshot recebida com sucesso! Tamanho:', request.base64.length);
         dispatch(setLastScreenshot(request.base64));
         dispatch(setIsSending(false));
         void clearScreenshotRequest(sessionCode);
@@ -130,7 +123,6 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
     });
 
     return () => {
-      console.log('[ATTENDANT] Desinscrevendo do listenToScreenshotRequest.');
       unsub();
     };
   }, [currentStatus, sessionCode, dispatch]);
@@ -263,6 +255,22 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
     }
   }, [sessionCode, dispatch, navigation]);
 
+  const handleOpenSupportUrl = useCallback(() => {
+    const trimmedUrl = supportUrl.trim();
+    if (!trimmedUrl) {
+      return;
+    }
+
+    const url = /^https?:\/\//i.test(trimmedUrl)
+      ? trimmedUrl
+      : `https://${trimmedUrl}`;
+
+    navigation.navigate('WebView', {
+      url,
+      title: 'Suporte',
+    });
+  }, [navigation, supportUrl]);
+
   if (isLoading) {
     return (
       <Box className="flex-1 items-center justify-center bg-[#F3F4F6] px-8">
@@ -370,6 +378,41 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
                   </Text>
                 </Box>
               ) : null}
+            </Box>
+
+            <Box className="border-b border-[#E2E8F0] bg-white px-4 py-3">
+              <VStack space="sm">
+                <HStack className="items-center justify-between">
+                  <Text className="text-[12px] uppercase tracking-[1px] text-[#64748B]" weight="bold">
+                    WebView do atendente
+                  </Text>
+                  <Text className="text-[12px] text-[#64748B]">
+                    Local
+                  </Text>
+                </HStack>
+
+                <HStack className="items-center" space="sm">
+                  <Input
+                    className="flex-1"
+                    value={supportUrl}
+                    onChangeText={setSupportUrl}
+                    placeholder="https://exemplo.com"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    keyboardType="url"
+                  />
+                  <Button
+                    className="min-h-11 px-4"
+                    disabled={supportUrl.trim().length === 0}
+                    onPress={handleOpenSupportUrl}
+                  >
+                    <HStack className="items-center justify-center" space="xs">
+                      <MaterialCommunityIcons name="open-in-app" size={17} color="#FFFFFF" />
+                      <ButtonText size="sm">Abrir</ButtonText>
+                    </HStack>
+                  </Button>
+                </HStack>
+              </VStack>
             </Box>
 
             <CommandPicker

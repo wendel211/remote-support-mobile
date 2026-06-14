@@ -12,7 +12,7 @@ import {
 } from '@shared/ui';
 import type { Command, CommandType } from '../types';
 
-interface CommandPikerProps {
+interface CommandPickerProps {
   sessionCode: string;
   onSend: (command: Omit<Command, 'id' | 'sentAt' | 'acknowledgedAt'>) => void;
 }
@@ -24,7 +24,7 @@ interface CommandDefinition {
 }
 
 const COMMAND_DEFINITIONS: CommandDefinition[] = [
-  { type: 'OPEN_SETTINGS', label: 'Configurações', icon: 'cog' },
+  { type: 'OPEN_SETTINGS', label: 'Configuracoes', icon: 'cog' },
   { type: 'RESTART_APP', label: 'Reiniciar app', icon: 'restart' },
   { type: 'NAVIGATE_URL', label: 'Abrir URL', icon: 'link' },
   { type: 'CLEAR_CACHE', label: 'Limpar cache', icon: 'trash-can' },
@@ -33,9 +33,26 @@ const COMMAND_DEFINITIONS: CommandDefinition[] = [
 
 export function CommandPicker({
   onSend,
-}: CommandPikerProps): React.JSX.Element {
+}: CommandPickerProps): React.JSX.Element {
   const [urlInput, setUrlInput] = useState('');
   const [showUrlInput, setShowUrlInput] = useState(false);
+
+  const sendUrlCommand = (url: string): void => {
+    const trimmedUrl = url.trim();
+    if (!trimmedUrl) {
+      return;
+    }
+
+    const normalizedUrl = /^https?:\/\//i.test(trimmedUrl)
+      ? trimmedUrl
+      : `https://${trimmedUrl}`;
+
+    onSend({
+      type: 'NAVIGATE_URL',
+      label: 'Navegar para URL',
+      payload: { url: normalizedUrl },
+    });
+  };
 
   const handleCommand = (definition: CommandDefinition): void => {
     if (definition.type === 'NAVIGATE_URL') {
@@ -44,12 +61,8 @@ export function CommandPicker({
           'Navegar para URL',
           'Digite a URL de destino:',
           (url) => {
-            if (url && url.trim().length > 0) {
-              onSend({
-                type: 'NAVIGATE_URL',
-                label: 'Navegar para URL',
-                payload: { url: url.trim() },
-              });
+            if (url) {
+              sendUrlCommand(url);
             }
           },
           'plain-text',
@@ -69,14 +82,7 @@ export function CommandPicker({
   };
 
   const handleConfirmUrl = (): void => {
-    const trimmed = urlInput.trim();
-    if (trimmed.length > 0) {
-      onSend({
-        type: 'NAVIGATE_URL',
-        label: 'Navegar para URL',
-        payload: { url: trimmed },
-      });
-    }
+    sendUrlCommand(urlInput);
     setUrlInput('');
     setShowUrlInput(false);
   };

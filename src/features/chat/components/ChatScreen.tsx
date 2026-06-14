@@ -1,11 +1,7 @@
 import React, { useEffect, useCallback, useMemo, useRef } from 'react';
-import {
-  FlatList,
-  Platform,
-  View,
-} from 'react-native';
+import { FlatList, View } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { Box, Button, ButtonText, HStack, Text, VStack } from '@shared/ui';
+import { Box, HStack, Text, VStack } from '@shared/ui';
 import { useAppDispatch, useAppSelector } from '@store/hooks';
 import {
   sendMessage,
@@ -27,15 +23,11 @@ import { ChatInput } from './ChatInput';
 interface ChatScreenProps {
   sessionCode: string;
   currentRole: MessageRole;
-  onApproveScreenshot?: () => void;
-  onDeclineScreenshot?: () => void;
 }
 
 export function ChatScreen({
   sessionCode,
   currentRole,
-  onApproveScreenshot,
-  onDeclineScreenshot,
 }: ChatScreenProps): React.JSX.Element {
   const dispatch = useAppDispatch();
   const messages = useAppSelector((state) => state.chat.messages);
@@ -106,14 +98,10 @@ export function ChatScreen({
 
       sendMessage(sessionCode, messageToSend)
         .then(() => {
-          dispatch(
-            updateMessageStatus({ id: tempId, status: 'sent' }),
-          );
+          dispatch(updateMessageStatus({ id: tempId, status: 'sent' }));
         })
         .catch(() => {
-          dispatch(
-            updateMessageStatus({ id: tempId, status: 'error' }),
-          );
+          dispatch(updateMessageStatus({ id: tempId, status: 'error' }));
         });
     },
     [sessionCode, currentRole, dispatch],
@@ -133,10 +121,7 @@ export function ChatScreen({
     [currentRole],
   );
 
-  const keyExtractor = useCallback(
-    (item: ChatMessage) => item.id,
-    [],
-  );
+  const keyExtractor = useCallback((item: ChatMessage) => item.id, []);
 
   return (
     <View className="flex-1 bg-background">
@@ -174,30 +159,11 @@ export function ChatScreen({
                       </Text>
                       <Text className="text-[13px] text-[#64748B]">
                         {currentRole === 'client'
-                          ? 'O atendente solicitou uma captura de tela do seu aplicativo.'
-                          : 'Aguardando aprovação do cliente...'}
+                          ? 'Enviando automaticamente uma captura da tela do app.'
+                          : 'Aguardando envio da captura pelo cliente...'}
                       </Text>
                     </VStack>
                   </HStack>
-
-                  {currentRole === 'client' && (
-                    <HStack space="sm" className="mt-3">
-                      <Button
-                        variant="outline"
-                        tone="danger"
-                        className="min-h-10 flex-1 rounded-xl"
-                        onPress={onDeclineScreenshot}
-                      >
-                        <ButtonText variant="outline" tone="danger" size="sm">Recusar</ButtonText>
-                      </Button>
-                      <Button
-                        className="min-h-10 flex-1 rounded-xl"
-                        onPress={onApproveScreenshot}
-                      >
-                        <ButtonText size="sm">Permitir</ButtonText>
-                      </Button>
-                    </HStack>
-                  )}
                 </Box>
               )}
             <TypingIndicator visible={isTyping} role={oppositeRole} />

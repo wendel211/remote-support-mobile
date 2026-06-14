@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Image, StyleSheet, TouchableOpacity, Modal } from 'react-native';
+import { View, Image, StyleSheet, TouchableOpacity, Modal, Text } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 interface ScreenshotViewerProps {
@@ -27,6 +27,10 @@ export function ScreenshotViewer({
         <TouchableOpacity style={styles.closeButton} onPress={onClose} activeOpacity={0.8}>
           <MaterialCommunityIcons name="close" size={24} color="#FFFFFF" />
         </TouchableOpacity>
+        <View style={styles.header}>
+          <Text style={styles.title}>Captura recebida</Text>
+          <Text style={styles.subtitle}>Tela renderizada do app do cliente</Text>
+        </View>
         <View style={styles.imageContainer}>
           <Image
             source={{ uri: `data:image/jpeg;base64,${base64}` }}
@@ -60,6 +64,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  header: {
+    width: '100%',
+    marginBottom: 14,
+  },
+  title: {
+    color: '#FFFFFF',
+    fontSize: 20,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  subtitle: {
+    color: '#CBD5E1',
+    fontSize: 13,
+    marginTop: 4,
+    textAlign: 'center',
   },
   imageContainer: {
     width: '100%',
