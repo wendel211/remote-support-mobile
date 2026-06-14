@@ -119,7 +119,7 @@ function getCommandDescription(command: Command | null): string | null {
     case 'SHOW_INFO':
       return 'Informações básicas do dispositivo e da sessão atual.';
     case 'NAVIGATE_URL':
-      return 'A URL será aberta na WebView do cliente.';
+      return 'A URL será aberta automaticamente no app do cliente.';
     default:
       return null;
   }

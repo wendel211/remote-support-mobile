@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Platform } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -39,11 +40,9 @@ import {
   sendCommand,
   addSentCommand,
   CommandPicker,
-  listenToPendingCommand,
-  acknowledgeCommand,
 } from '@features/commands';
 import type { Command } from '@features/commands';
-import { Box, Button, ButtonText, HStack, Input, Text, VStack } from '@shared/ui';
+import { Box, Button, ButtonText, HStack, Input, Text, VStack, useTheme } from '@shared/ui';
 
 import { usePerformanceMonitor, useRenderMetric } from '@features/performance';
 
@@ -52,6 +51,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Attendant'>;
 export function AttendantScreen({ navigation }: Props): React.JSX.Element {
   const dispatch = useAppDispatch();
   const insets = useSafeAreaInsets();
+  const { isDark } = useTheme();
   const [isLoading, setIsLoading] = useState(true);
   const [initError, setInitError] = useState<string | null>(null);
   const [sessionCode, setSessionCode] = useState('');
@@ -77,10 +77,6 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
   );
   const isSending = useAppSelector((state) => state.screenshot.isSending);
   const screenshotError = useAppSelector((state) => state.screenshot.error);
-  const sentCommands = useAppSelector(
-    (state) => state.commands.sentCommands,
-  );
-
   const handleRequestScreenshot = useCallback(async () => {
     dispatch(setIsSending(true));
     dispatch(setError(null));
@@ -127,33 +123,6 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
       unsub();
     };
   }, [currentStatus, sessionCode, dispatch]);
-
-  useEffect(() => {
-    if (currentStatus !== 'connected' || !sessionCode) {
-      return undefined;
-    }
-
-    const unsubscribeCommands = listenToPendingCommand(
-      sessionCode,
-      (command) => {
-        if (command) {
-          const isSentByMe = sentCommands.some((c) => c.id === command.id);
-          if (!isSentByMe) {
-            if (command.type === 'NAVIGATE_URL' && command.payload?.url) {
-              navigation.navigate('WebView', {
-                url: command.payload.url,
-              });
-              void acknowledgeCommand(sessionCode, command.id);
-            }
-          }
-        }
-      },
-    );
-
-    return () => {
-      unsubscribeCommands();
-    };
-  }, [currentStatus, sessionCode, sentCommands, navigation]);
 
   const initSession = useCallback(async () => {
     setIsLoading(true);
@@ -275,9 +244,10 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
 
   if (isLoading) {
     return (
-      <Box className="flex-1 items-center justify-center bg-[#F3F4F6] px-8">
-        <ActivityIndicator size="large" color="#2563EB" />
-        <Text className="mt-4 text-[14px] text-[#64748B]">
+      <Box className="flex-1 items-center justify-center px-8" style={{ backgroundColor: isDark ? '#090D16' : '#F3F4F6' }}>
+        <StatusBar style={isDark ? 'light' : 'dark'} />
+        <ActivityIndicator size="large" color={isDark ? '#3B82F6' : '#2563EB'} />
+        <Text className="mt-4 text-[14px]" style={{ color: isDark ? '#94A3B8' : '#64748B' }}>
           Criando sessão...
         </Text>
       </Box>
@@ -287,22 +257,31 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
   if (initError) {
     return (
       <Box
-        className="flex-1 bg-[#F3F4F6] px-7"
+        className="flex-1 px-7"
         style={{
+          backgroundColor: isDark ? '#090D16' : '#F3F4F6',
           paddingTop: Math.max(insets.top, 24) + 16,
           paddingBottom: Math.max(insets.bottom, 20),
         }}
       >
+        <StatusBar style={isDark ? 'light' : 'dark'} />
         <VStack className="flex-1 justify-center" space="xl">
           <VStack className="items-center" space="md">
-            <Box className="h-16 w-16 items-center justify-center rounded-2xl bg-red-50">
-              <MaterialCommunityIcons name="database-alert" size={36} color="#DC2626" />
+            <Box
+              className="h-16 w-16 items-center justify-center rounded-2xl border"
+              style={{
+                backgroundColor: isDark ? 'rgba(239, 68, 68, 0.1)' : '#FEF2F2',
+                borderColor: isDark ? '#7F1D1D' : '#FCA5A5',
+                borderWidth: 1
+              }}
+            >
+              <MaterialCommunityIcons name="database-alert" size={36} color={isDark ? '#EF4444' : '#DC2626'} />
             </Box>
             <VStack className="items-center" space="xs">
-              <Text className="text-[25px] leading-[30px] text-black" weight="bold">
+              <Text className="text-[25px] leading-[30px]" style={{ color: isDark ? '#FFFFFF' : '#111827' }} weight="bold">
                 Não foi possível criar a sessão
               </Text>
-              <Text className="max-w-[270px] text-center text-[13px] leading-[19px] text-[#64748B]">
+              <Text className="max-w-[270px] text-center text-[13px] leading-[19px]" style={{ color: isDark ? '#F87171' : '#64748B' }}>
                 {initError}
               </Text>
             </VStack>
@@ -317,9 +296,13 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
               className="min-h-12"
               variant="outline"
               tone="secondary"
+              style={{
+                backgroundColor: 'transparent',
+                borderColor: isDark ? '#24334A' : '#D7DEE8'
+              }}
               onPress={() => navigation.navigate('RoleSelection')}
             >
-              <ButtonText variant="outline" tone="secondary">
+              <ButtonText variant="outline" tone="secondary" style={{ color: isDark ? '#94A3B8' : '#475569' }}>
                 Voltar
               </ButtonText>
             </Button>
@@ -335,22 +318,29 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         className="flex-1"
       >
-        <Box className="flex-1 bg-[#F3F4F6]">
+        <Box className="flex-1" style={{ backgroundColor: isDark ? '#090D16' : '#F3F4F6' }}>
+          <StatusBar style={isDark ? 'light' : 'dark'} />
           <VStack
-            className="bg-[#F3F4F6] px-4 pb-3"
-            style={{ paddingTop: Math.max(insets.top, 24) + 10 }}
+            className="px-4 pb-3"
+            style={{ backgroundColor: isDark ? '#090D16' : '#F3F4F6', paddingTop: Math.max(insets.top, 24) + 10 }}
             space="sm"
           >
-            <HStack className="items-center justify-between rounded-2xl border border-[#E2E8F0] bg-white px-4 py-3 shadow-sm">
+            <HStack
+              className="items-center justify-between rounded-2xl border px-4 py-3 shadow-sm"
+              style={{
+                backgroundColor: isDark ? '#161F30' : '#FFFFFF',
+                borderColor: isDark ? '#24334A' : '#E2E8F0'
+              }}
+            >
               <HStack className="items-center flex-1" space="md">
-                <Box className="h-10 w-10 items-center justify-center rounded-xl bg-[#F1F5F9]">
+                <Box className="h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: isDark ? '#1E293B' : '#F1F5F9' }}>
                   <AttendantIcon size={22} />
                 </Box>
-                <Text className="text-[17px] text-[#0F172A]" weight="bold">
+                <Text className="text-[17px]" style={{ color: isDark ? '#FFFFFF' : '#0F172A' }} weight="bold">
                   Atendente
                 </Text>
-                <Box className="rounded-md bg-[#F1F5F9] px-2 py-0.5">
-                  <Text className="text-[12px] leading-4 text-[#64748B]" weight="bold">
+                <Box className="rounded-md px-2 py-0.5" style={{ backgroundColor: isDark ? '#1E293B' : '#F1F5F9' }}>
+                  <Text className="text-[12px] leading-4" style={{ color: isDark ? '#94A3B8' : '#64748B' }} weight="bold">
                     #{sessionCode}
                   </Text>
                 </Box>
@@ -358,9 +348,9 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
               </HStack>
             </HStack>
 
-            <HStack className="justify-center rounded-xl bg-[#ECFDF5] py-2" space="xs">
+            <HStack className="justify-center rounded-xl py-2" style={{ backgroundColor: isDark ? 'rgba(5, 150, 105, 0.1)' : '#ECFDF5' }} space="xs">
               <ConnectedIcon />
-              <Text className="text-[12px] leading-4 text-[#059669]" weight="semibold">
+              <Text className="text-[12px] leading-4" style={{ color: isDark ? '#34D399' : '#059669' }} weight="semibold">
                 Cliente conectado com sucesso
               </Text>
             </HStack>
@@ -368,13 +358,27 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
 
           {!isKeyboardVisible && (
             <>
-              <Box className="border-y border-[#E2E8F0] bg-white px-4 py-3">
+              <Box
+                className="px-4 py-3"
+                style={{
+                  backgroundColor: isDark ? '#161F30' : '#FFFFFF',
+                  borderTopWidth: 1,
+                  borderBottomWidth: 1,
+                  borderColor: isDark ? '#24334A' : '#E2E8F0'
+                }}
+              >
                 <ScreenshotButton
                   onPress={() => void handleRequestScreenshot()}
                   isLoading={isSending}
                 />
                 {screenshotError ? (
-                  <Box className="mt-3 rounded-xl border border-red-100 bg-danger-50 px-4 py-3">
+                  <Box
+                    className="mt-3 rounded-xl border px-4 py-3"
+                    style={{
+                      backgroundColor: isDark ? 'rgba(239, 68, 68, 0.1)' : '#FEF2F2',
+                      borderColor: isDark ? '#7F1D1D' : '#FCA5A5'
+                    }}
+                  >
                     <Text className="text-center text-[12px]" tone="danger" weight="medium">
                       {screenshotError}
                     </Text>
@@ -382,13 +386,20 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
                 ) : null}
               </Box>
 
-              <Box className="border-b border-[#E2E8F0] bg-white px-4 py-3">
+              <Box
+                className="px-4 py-3"
+                style={{
+                  backgroundColor: isDark ? '#161F30' : '#FFFFFF',
+                  borderBottomWidth: 1,
+                  borderColor: isDark ? '#24334A' : '#E2E8F0'
+                }}
+              >
                 <VStack space="sm">
                   <HStack className="items-center justify-between">
-                    <Text className="text-[12px] uppercase tracking-[1px] text-[#64748B]" weight="bold">
+                    <Text className="text-[12px] uppercase tracking-[1px]" style={{ color: isDark ? '#94A3B8' : '#64748B' }} weight="bold">
                       WebView do atendente
                     </Text>
-                    <Text className="text-[12px] text-[#64748B]">
+                    <Text className="text-[12px]" style={{ color: isDark ? '#64748B' : '#64748B' }}>
                       Local
                     </Text>
                   </HStack>
@@ -399,9 +410,11 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
                       value={supportUrl}
                       onChangeText={setSupportUrl}
                       placeholder="https://exemplo.com"
+                      placeholderTextColor={isDark ? '#475569' : '#98A2B3'}
                       autoCapitalize="none"
                       autoCorrect={false}
                       keyboardType="url"
+                      style={isDark ? { backgroundColor: '#090D16', borderColor: '#24334A', color: '#FFFFFF' } : undefined}
                     />
                     <Button
                       className="min-h-11 px-4"
@@ -417,31 +430,35 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
                 </VStack>
               </Box>
 
-              <CommandPicker
-                sessionCode={sessionCode}
-                onSend={(cmd) => {
-                  void (async () => {
-                    const id = await sendCommand(sessionCode, cmd);
-                    dispatch(
-                      addSentCommand({
-                        ...cmd,
-                        id,
-                        sentAt: Date.now(),
-                        acknowledgedAt: null,
-                      } as Command),
-                    );
-                  })();
-                }}
-              />
             </>
           )}
+
+          <CommandPicker
+            sessionCode={sessionCode}
+            onSend={(cmd) => {
+              void (async () => {
+                const id = await sendCommand(sessionCode, cmd);
+                dispatch(
+                  addSentCommand({
+                    ...cmd,
+                    id,
+                    sentAt: Date.now(),
+                    acknowledgedAt: null,
+                  } as Command),
+                );
+              })();
+            }}
+          />
 
           <ChatScreen sessionCode={sessionCode} currentRole="attendant" />
 
           {!isKeyboardVisible && (
             <Box
-              className="bg-white px-4 pt-3"
-              style={{ paddingBottom: Math.max(insets.bottom, 12) }}
+              className="px-4 pt-3"
+              style={{
+                backgroundColor: isDark ? '#161F30' : '#FFFFFF',
+                paddingBottom: Math.max(insets.bottom, 12)
+              }}
             >
               <Button
                 className="min-h-12 w-full"
@@ -467,36 +484,44 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
 
   return (
     <Box
-      className="flex-1 bg-[#F3F4F6] px-7"
+      className="flex-1 px-7"
       style={{
+        backgroundColor: isDark ? '#090D16' : '#F3F4F6',
         paddingTop: Math.max(insets.top, 24) + 16,
         paddingBottom: Math.max(insets.bottom, 20),
       }}
     >
+      <StatusBar style={isDark ? 'light' : 'dark'} />
       <VStack className="flex-1 justify-center" space="xl">
         <VStack className="items-center" space="md">
-          <Box className="h-16 w-16 items-center justify-center rounded-2xl bg-[#F1F5F9]">
+          <Box className="h-16 w-16 items-center justify-center rounded-2xl" style={{ backgroundColor: isDark ? '#1E293B' : '#F1F5F9' }}>
             <AttendantIcon large />
           </Box>
           <VStack className="items-center" space="xs">
-            <Text className="text-[25px] leading-[30px] text-black" weight="bold">
+            <Text className="text-[25px] leading-[30px]" style={{ color: isDark ? '#FFFFFF' : '#111827' }} weight="bold">
               Painel do atendente
             </Text>
-            <Text className="max-w-[250px] text-center text-[13px] leading-[19px] text-[#64748B]">
+            <Text className="max-w-[250px] text-center text-[13px] leading-[19px]" style={{ color: isDark ? '#94A3B8' : '#64748B' }}>
               O cliente usa este código para entrar no atendimento.
             </Text>
           </VStack>
         </VStack>
 
-        <Box className="rounded-2xl border border-[#E2E8F0] bg-white px-5 py-6 shadow-sm">
+        <Box
+          className="rounded-2xl border px-5 py-6 shadow-sm"
+          style={{
+            backgroundColor: isDark ? '#161F30' : '#FFFFFF',
+            borderColor: isDark ? '#24334A' : '#E2E8F0'
+          }}
+        >
           <VStack className="items-center" space="md">
-            <Text className="text-[12px] leading-4 text-[#64748B]" weight="semibold">
+            <Text className="text-[12px] leading-4" style={{ color: isDark ? '#94A3B8' : '#64748B' }} weight="semibold">
               Código da sessão
             </Text>
-            <Text className="text-[38px] leading-[44px] tracking-[7px] text-[#2563EB]" weight="bold">
+            <Text className="text-[38px] leading-[44px] tracking-[7px]" style={{ color: isDark ? '#60A5FA' : '#2563EB' }} weight="bold">
               {sessionCode}
             </Text>
-            <Text className="text-center text-[12px] leading-[17px] text-[#64748B]">
+            <Text className="text-center text-[12px] leading-[17px]" style={{ color: isDark ? '#94A3B8' : '#64748B' }}>
               O cliente usa este código para entrar no atendimento.
             </Text>
           </VStack>
@@ -507,10 +532,14 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
 
           {currentStatus === 'ended' && (
             <HStack
-              className="justify-center rounded-xl border border-red-100 bg-danger-50 px-5 py-3"
+              className="justify-center rounded-xl border px-5 py-3"
+              style={{
+                backgroundColor: isDark ? 'rgba(239, 68, 68, 0.1)' : '#FEF2F2',
+                borderColor: isDark ? '#7F1D1D' : '#FCA5A5'
+              }}
               space="sm"
             >
-              <Text className="text-[13px] text-danger-600" weight="semibold">
+              <Text className="text-[13px]" style={{ color: isDark ? '#F87171' : '#DC2626' }} weight="semibold">
                 Sessão encerrada
               </Text>
             </HStack>
@@ -530,8 +559,9 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
 }
 
 function AttendantIcon({ large = false, size }: { large?: boolean; size?: number }): React.JSX.Element {
+  const { isDark } = useTheme();
   return (
-    <MaterialCommunityIcons name="tools" size={size ?? (large ? 36 : 22)} color="#475569" />
+    <MaterialCommunityIcons name="tools" size={size ?? (large ? 36 : 22)} color={isDark ? '#94A3B8' : '#475569'} />
   );
 }
 

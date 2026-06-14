@@ -1,4 +1,4 @@
-export { GluestackUIProvider } from './gluestack-ui-provider';
+export { ThemeProvider, useTheme } from './ThemeContext';
 export { Box, type BoxProps } from './box';
 export { HStack, type HStackProps } from './hstack';
 export { VStack, type VStackProps } from './vstack';

@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { DevSettings, Linking, Modal, Keyboard, KeyboardAvoidingView, Platform } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -38,6 +39,7 @@ import {
   Input,
   Text,
   VStack,
+  useTheme,
 } from '@shared/ui';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Client'>;
@@ -45,6 +47,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Client'>;
 export function ClientScreen({ navigation }: Props): React.JSX.Element {
   const dispatch = useAppDispatch();
   const insets = useSafeAreaInsets();
+  const { isDark } = useTheme();
   const error = useAppSelector((state) => state.session.error);
   const [code, setCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -152,6 +155,15 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
     const unsubscribeCommands = listenToPendingCommand(
       connectedCode,
       (command) => {
+        if (command?.type === 'NAVIGATE_URL' && command.payload?.url) {
+          void acknowledgeCommand(connectedCode, command.id);
+          dispatch(setPendingCommand(null));
+          navigation.navigate('WebView', {
+            url: command.payload.url,
+          });
+          return;
+        }
+
         dispatch(setPendingCommand(command));
       },
     );
@@ -159,7 +171,7 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
     return () => {
       unsubscribeCommands();
     };
-  }, [connectedCode, dispatch]);
+  }, [connectedCode, dispatch, navigation]);
 
   const handleLeaveSession = useCallback(async () => {
     if (connectedCode) {
@@ -197,12 +209,6 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
 
       if (command.type === 'OPEN_SETTINGS') {
         void Linking.openSettings();
-      }
-
-      if (command.type === 'NAVIGATE_URL' && command.payload?.url) {
-        navigation.navigate('WebView', {
-          url: command.payload.url,
-        });
       }
 
       if (command.type === 'CLEAR_CACHE') {
@@ -244,24 +250,32 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
       >
         <Box
           ref={viewRef}
-          className="flex-1 bg-[#F3F4F6]"
+          className="flex-1"
+          style={{ backgroundColor: isDark ? '#090D16' : '#F3F4F6' }}
           collapsable={false}
         >
-        <VStack
-          className="bg-[#F3F4F6] px-4 pb-3"
-          style={{ paddingTop: Math.max(insets.top, 24) + 10 }}
-          space="sm"
-        >
-            <HStack className="items-center justify-between rounded-2xl border border-[#E2E8F0] bg-white px-4 py-3 shadow-sm">
+          <StatusBar style={isDark ? 'light' : 'dark'} />
+          <VStack
+            className="px-4 pb-3"
+            style={{ backgroundColor: isDark ? '#090D16' : '#F3F4F6', paddingTop: Math.max(insets.top, 24) + 10 }}
+            space="sm"
+          >
+            <HStack
+              className="items-center justify-between rounded-2xl border px-4 py-3 shadow-sm"
+              style={{
+                backgroundColor: isDark ? '#161F30' : '#FFFFFF',
+                borderColor: isDark ? '#24334A' : '#E2E8F0'
+              }}
+            >
               <HStack className="items-center flex-1" space="md">
-                <Box className="h-10 w-10 items-center justify-center rounded-xl bg-[#F8FAFC]">
+                <Box className="h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: isDark ? '#1E293B' : '#F8FAFC' }}>
                   <ClientIcon />
                 </Box>
-                <Text className="text-[17px] text-[#0F172A]" weight="bold">
+                <Text className="text-[17px]" style={{ color: isDark ? '#FFFFFF' : '#0F172A' }} weight="bold">
                   Cliente
                 </Text>
-                <Box className="rounded-md bg-[#F1F5F9] px-2 py-0.5">
-                  <Text className="text-[12px] leading-4 text-[#64748B]" weight="bold">
+                <Box className="rounded-md px-2 py-0.5" style={{ backgroundColor: isDark ? '#1E293B' : '#F1F5F9' }}>
+                  <Text className="text-[12px] leading-4" style={{ color: isDark ? '#94A3B8' : '#64748B' }} weight="bold">
                     #{connectedCode}
                   </Text>
                 </Box>
@@ -270,9 +284,16 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
             </HStack>
 
           {isSending && (
-            <Box className="rounded-xl border border-orange-100 bg-warning-50 py-2">
+            <Box
+              className="rounded-xl border py-2"
+              style={{
+                backgroundColor: isDark ? 'rgba(249, 115, 22, 0.1)' : '#FFF7ED',
+                borderColor: isDark ? 'rgba(249, 115, 22, 0.3)' : '#FED7AA'
+              }}
+            >
               <Text
-                className="text-center text-[12px] text-warning-500"
+                className="text-center text-[12px]"
+                style={{ color: '#F97316' }}
                 weight="semibold"
               >
                 Enviando captura de tela...
@@ -280,9 +301,9 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
             </Box>
           )}
 
-          <HStack className="justify-center rounded-xl bg-[#ECFDF5] py-2" space="sm">
+          <HStack className="justify-center rounded-xl py-2" style={{ backgroundColor: isDark ? 'rgba(5, 150, 105, 0.1)' : '#ECFDF5' }} space="sm">
             <ConnectedIcon />
-            <Text className="text-[12px] leading-4 text-[#059669]" weight="semibold">
+            <Text className="text-[12px] leading-4" style={{ color: isDark ? '#34D399' : '#059669' }} weight="semibold">
               Conectado ao atendente
             </Text>
           </HStack>
@@ -295,8 +316,11 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
 
         {!isKeyboardVisible && (
           <Box 
-            className="bg-white px-4 pt-3"
-            style={{ paddingBottom: Math.max(insets.bottom, 12) }}
+            className="px-4 pt-3"
+            style={{
+              backgroundColor: isDark ? '#161F30' : '#FFFFFF',
+              paddingBottom: Math.max(insets.bottom, 12)
+            }}
           >
             <Button
               className="min-h-12 w-full"
@@ -324,17 +348,30 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
           statusBarTranslucent
         >
           <Box className="flex-1 items-center justify-center bg-black/60 px-8">
-            <Box className="w-full rounded-panel bg-surface px-6 py-8 shadow-soft">
+            <Box
+              className="w-full rounded-panel px-6 py-8 shadow-soft"
+              style={{
+                backgroundColor: isDark ? '#161F30' : '#FFFFFF',
+                borderWidth: isDark ? 1 : 0,
+                borderColor: '#24334A'
+              }}
+            >
               <VStack className="items-center" space="md">
-                <Box className="h-16 w-16 items-center justify-center rounded-2xl bg-danger-50">
-                  <MaterialCommunityIcons name="alert-circle-outline" size={36} color="#DC2626" />
+                <Box
+                  className="h-16 w-16 items-center justify-center rounded-2xl border"
+                  style={{
+                    backgroundColor: isDark ? 'rgba(239, 68, 68, 0.1)' : '#FEF2F2',
+                    borderColor: isDark ? '#7F1D1D' : '#FCA5A5'
+                  }}
+                >
+                  <MaterialCommunityIcons name="alert-circle-outline" size={36} color={isDark ? '#EF4444' : '#DC2626'} />
                 </Box>
 
                 <VStack className="items-center" space="xs">
-                  <Text className="text-center text-[20px] leading-[26px] text-[#0F172A]" weight="bold">
+                  <Text className="text-center text-[20px] leading-[26px]" style={{ color: isDark ? '#FFFFFF' : '#0F172A' }} weight="bold">
                     Sessão encerrada
                   </Text>
-                  <Text className="text-center text-[13px] leading-[19px] text-[#64748B]">
+                  <Text className="text-center text-[13px] leading-[19px]" style={{ color: isDark ? '#94A3B8' : '#64748B' }}>
                     O atendimento foi encerrado pelo atendente.
                   </Text>
                 </VStack>
@@ -353,42 +390,58 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
 
   return (
     <Box
-      className="flex-1 bg-[#F3F4F6] px-7"
+      className="flex-1 px-7"
       style={{
+        backgroundColor: isDark ? '#090D16' : '#F3F4F6',
         paddingTop: Math.max(insets.top, 24) + 16,
         paddingBottom: Math.max(insets.bottom, 20),
       }}
     >
+      <StatusBar style={isDark ? 'light' : 'dark'} />
       <VStack className="flex-1 justify-center" space="xl">
         <VStack className="items-center" space="md">
-          <Box className="h-16 w-16 items-center justify-center rounded-2xl bg-[#F8FAFC]">
+          <Box className="h-16 w-16 items-center justify-center rounded-2xl" style={{ backgroundColor: isDark ? '#1E293B' : '#F8FAFC' }}>
             <ClientIcon large />
           </Box>
           <VStack className="items-center" space="xs">
-            <Text className="text-[25px] leading-[30px] text-black" weight="bold">
+            <Text className="text-[25px] leading-[30px]" style={{ color: isDark ? '#FFFFFF' : '#111827' }} weight="bold">
               Entrar na sessão
             </Text>
-            <Text className="max-w-[255px] text-center text-[13px] leading-[19px] text-[#64748B]">
+            <Text className="max-w-[255px] text-center text-[13px] leading-[19px]" style={{ color: isDark ? '#94A3B8' : '#64748B' }}>
               Digite o código de 6 caracteres fornecido pelo atendente.
             </Text>
           </VStack>
         </VStack>
 
-        <Box className="rounded-2xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
+        <Box
+          className="rounded-2xl border p-5 shadow-sm"
+          style={{
+            backgroundColor: isDark ? '#161F30' : '#FFFFFF',
+            borderColor: isDark ? '#24334A' : '#E2E8F0'
+          }}
+        >
           <VStack space="md">
             <Input
               className="min-h-[66px] text-center text-[25px] font-bold tracking-[8px]"
               value={code}
               onChangeText={handleCodeChange}
               placeholder="CÓDIGO"
+              placeholderTextColor={isDark ? '#475569' : '#98A2B3'}
               maxLength={6}
               autoCapitalize="characters"
               autoCorrect={false}
               editable={!isLoading}
+              style={isDark ? { backgroundColor: '#090D16', borderColor: '#24334A', color: '#FFFFFF' } : undefined}
             />
 
             {error ? (
-              <Box className="rounded-xl border border-red-100 bg-danger-50 px-4 py-3">
+              <Box
+                className="rounded-xl border px-4 py-3"
+                style={{
+                  backgroundColor: isDark ? 'rgba(239, 68, 68, 0.1)' : '#FEF2F2',
+                  borderColor: isDark ? '#7F1D1D' : '#FCA5A5'
+                }}
+              >
                 <Text className="text-center text-[13px]" tone="danger" weight="medium">
                   {error}
                 </Text>
@@ -408,9 +461,13 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
               className="min-h-12"
               variant="outline"
               tone="secondary"
+              style={{
+                backgroundColor: 'transparent',
+                borderColor: isDark ? '#24334A' : '#D7DEE8'
+              }}
               onPress={() => navigation.navigate('RoleSelection')}
             >
-              <ButtonText variant="outline" tone="secondary">
+              <ButtonText variant="outline" tone="secondary" style={{ color: isDark ? '#94A3B8' : '#475569' }}>
                 Voltar
               </ButtonText>
             </Button>
@@ -425,17 +482,30 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
         statusBarTranslucent
       >
         <Box className="flex-1 items-center justify-center bg-black/60 px-8">
-          <Box className="w-full rounded-panel bg-surface px-6 py-8 shadow-soft">
+          <Box
+            className="w-full rounded-panel px-6 py-8 shadow-soft"
+            style={{
+              backgroundColor: isDark ? '#161F30' : '#FFFFFF',
+              borderWidth: isDark ? 1 : 0,
+              borderColor: '#24334A'
+            }}
+          >
             <VStack className="items-center" space="md">
-              <Box className="h-16 w-16 items-center justify-center rounded-2xl bg-danger-50">
-                <MaterialCommunityIcons name="alert-circle-outline" size={36} color="#DC2626" />
+              <Box
+                className="h-16 w-16 items-center justify-center rounded-2xl border"
+                style={{
+                  backgroundColor: isDark ? 'rgba(239, 68, 68, 0.1)' : '#FEF2F2',
+                  borderColor: isDark ? '#7F1D1D' : '#FCA5A5'
+                }}
+              >
+                <MaterialCommunityIcons name="alert-circle-outline" size={36} color={isDark ? '#EF4444' : '#DC2626'} />
               </Box>
 
               <VStack className="items-center" space="xs">
-                <Text className="text-center text-[20px] leading-[26px] text-[#0F172A]" weight="bold">
+                <Text className="text-center text-[20px] leading-[26px]" style={{ color: isDark ? '#FFFFFF' : '#0F172A' }} weight="bold">
                   Sessão encerrada
                 </Text>
-                <Text className="text-center text-[13px] leading-[19px] text-[#64748B]">
+                <Text className="text-center text-[13px] leading-[19px]" style={{ color: isDark ? '#94A3B8' : '#64748B' }}>
                   O atendimento foi encerrado pelo atendente.
                 </Text>
               </VStack>
@@ -452,23 +522,27 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
 }
 
 function ClientIcon({ large = false }: { large?: boolean }): React.JSX.Element {
+  const { isDark } = useTheme();
   const scale = large ? 1.25 : 1;
+  const color = isDark ? '#94A3B8' : '#374151';
   return (
     <Box style={{ height: 28 * scale, width: 28 * scale, alignItems: 'center' }}>
       <Box
-        className="rounded-full bg-[#374151]"
+        className="rounded-full"
         style={{
           marginTop: 5 * scale,
           height: 9 * scale,
           width: 9 * scale,
+          backgroundColor: color
         }}
       />
       <Box
-        className="rounded-t-full bg-[#374151]"
+        className="rounded-t-full"
         style={{
           marginTop: 2 * scale,
           height: 9 * scale,
           width: 16 * scale,
+          backgroundColor: color
         }}
       />
     </Box>

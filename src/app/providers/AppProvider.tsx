@@ -7,7 +7,7 @@ import { Poppins_500Medium } from '@expo-google-fonts/poppins/500Medium';
 import { Poppins_600SemiBold } from '@expo-google-fonts/poppins/600SemiBold';
 import { Poppins_700Bold } from '@expo-google-fonts/poppins/700Bold';
 import { store } from '@store/index';
-import { GluestackUIProvider } from '@shared/ui';
+import { ThemeProvider } from '@shared/ui';
 
 interface AppProviderProps {
   children: React.ReactNode;
@@ -28,7 +28,7 @@ export function AppProvider({ children }: AppProviderProps): React.JSX.Element {
   return (
     <ReduxProvider store={store}>
       <SafeAreaProvider>
-        <GluestackUIProvider>{children}</GluestackUIProvider>
+        <ThemeProvider>{children}</ThemeProvider>
       </SafeAreaProvider>
     </ReduxProvider>
   );
