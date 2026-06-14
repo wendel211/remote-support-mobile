@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Linking, Modal, Keyboard, KeyboardAvoidingView, Platform } from 'react-native';
+import { DevSettings, Linking, Modal, Keyboard, KeyboardAvoidingView, Platform } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -17,6 +17,7 @@ import {
   clearSession,
 } from '@features/session/store';
 import { clearMessages } from '@features/chat/store';
+import { sendMessage } from '@features/chat';
 import type { Session } from '@features/session/types';
 import { StatusBadge } from '@shared/components';
 import { ChatScreen } from '@features/chat/components';
@@ -184,6 +185,57 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
     setCode(text.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6));
   }, []);
 
+  const handleAcknowledgeCommand = useCallback(async () => {
+    if (!pendingCommand) {
+      return;
+    }
+
+    const command = pendingCommand;
+
+    try {
+      await acknowledgeCommand(connectedCode, command.id);
+
+      if (command.type === 'OPEN_SETTINGS') {
+        void Linking.openSettings();
+      }
+
+      if (command.type === 'NAVIGATE_URL' && command.payload?.url) {
+        navigation.navigate('WebView', {
+          url: command.payload.url,
+        });
+      }
+
+      if (command.type === 'CLEAR_CACHE') {
+        dispatch(clearMessages());
+        dispatch(clearScreenshot());
+        await sendMessage(connectedCode, {
+          sessionCode: connectedCode,
+          text: 'Cache local do cliente limpo.',
+          role: 'system',
+          status: 'sent',
+          timestamp: Date.now(),
+        });
+      }
+
+      if (command.type === 'RESTART_APP') {
+        setTimeout(() => {
+          const reload = (DevSettings as typeof DevSettings & {
+            reload?: () => void;
+          }).reload;
+
+          if (reload) {
+            reload();
+            return;
+          }
+
+          navigation.navigate('RoleSelection');
+        }, 250);
+      }
+    } finally {
+      dispatch(setPendingCommand(null));
+    }
+  }, [connectedCode, dispatch, navigation, pendingCommand]);
+
   if (isConnected) {
     return (
       <KeyboardAvoidingView
@@ -261,23 +313,8 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
 
         <CommandModal
           command={pendingCommand}
-          onAcknowledge={() => {
-            if (pendingCommand) {
-              void acknowledgeCommand(connectedCode, pendingCommand.id);
-              if (pendingCommand.type === 'OPEN_SETTINGS') {
-                void Linking.openSettings();
-              }
-              if (
-                pendingCommand.type === 'NAVIGATE_URL' &&
-                pendingCommand.payload?.url
-              ) {
-                navigation.navigate('WebView', {
-                  url: pendingCommand.payload.url,
-                });
-              }
-              dispatch(setPendingCommand(null));
-            }
-          }}
+          sessionCode={connectedCode}
+          onAcknowledge={handleAcknowledgeCommand}
         />
 
         <Modal

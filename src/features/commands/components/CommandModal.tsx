@@ -1,12 +1,13 @@
 import React from 'react';
-import { Modal } from 'react-native';
+import { Modal, Platform } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { Box, Button, ButtonText, Text, VStack } from '@shared/ui';
+import { Box, Button, ButtonText, HStack, Text, VStack } from '@shared/ui';
 import type { Command } from '../types';
 
 interface CommandModalProps {
   command: Command | null;
-  onAcknowledge: () => void;
+  sessionCode?: string;
+  onAcknowledge: () => void | Promise<void>;
 }
 
 const COMMAND_ICONS: Record<Command['type'], keyof typeof MaterialCommunityIcons.glyphMap> = {
@@ -19,8 +20,20 @@ const COMMAND_ICONS: Record<Command['type'], keyof typeof MaterialCommunityIcons
 
 export function CommandModal({
   command,
+  sessionCode,
   onAcknowledge,
 }: CommandModalProps): React.JSX.Element {
+  const commandDescription = getCommandDescription(command);
+  const deviceInfo = command?.type === 'SHOW_INFO'
+    ? [
+        { label: 'Perfil', value: 'Cliente' },
+        { label: 'Sessão', value: sessionCode ?? '-' },
+        { label: 'Plataforma', value: Platform.OS },
+        { label: 'Versão do sistema', value: String(Platform.Version) },
+        { label: 'Status', value: 'Conectado' },
+      ]
+    : [];
+
   return (
     <Modal
       visible={command !== null}
@@ -49,6 +62,11 @@ export function CommandModal({
               <Text className="text-center" size="xl" weight="bold">
                 {command?.label ?? ''}
               </Text>
+              {commandDescription ? (
+                <Text className="text-center" size="sm" tone="muted">
+                  {commandDescription}
+                </Text>
+              ) : null}
             </VStack>
 
             {command?.type === 'NAVIGATE_URL' && command.payload?.url ? (
@@ -65,6 +83,21 @@ export function CommandModal({
               </Box>
             ) : null}
 
+            {deviceInfo.length > 0 ? (
+              <VStack className="w-full rounded-ui bg-slate-50 px-4 py-3" space="xs">
+                {deviceInfo.map((item) => (
+                  <HStack key={item.label} className="justify-between" space="sm">
+                    <Text size="sm" tone="muted">
+                      {item.label}
+                    </Text>
+                    <Text className="flex-1 text-right" size="sm" weight="semibold">
+                      {item.value}
+                    </Text>
+                  </HStack>
+                ))}
+              </VStack>
+            ) : null}
+
             <Button className="mt-2 w-full" onPress={onAcknowledge}>
               <ButtonText>Entendido</ButtonText>
             </Button>
@@ -73,4 +106,21 @@ export function CommandModal({
       </Box>
     </Modal>
   );
+}
+
+function getCommandDescription(command: Command | null): string | null {
+  switch (command?.type) {
+    case 'OPEN_SETTINGS':
+      return 'As configurações do dispositivo serão abertas no cliente.';
+    case 'RESTART_APP':
+      return 'O app será recarregado localmente no dispositivo do cliente.';
+    case 'CLEAR_CACHE':
+      return 'Mensagens em memória e capturas locais serão limpas no cliente.';
+    case 'SHOW_INFO':
+      return 'Informações básicas do dispositivo e da sessão atual.';
+    case 'NAVIGATE_URL':
+      return 'A URL será aberta na WebView do cliente.';
+    default:
+      return null;
+  }
 }
