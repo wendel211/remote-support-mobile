@@ -13,6 +13,21 @@ export const store = configureStore({
     commands: commandsReducer,
     performance: performanceReducer,
   },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      immutableCheck: {
+        warnAfter: 128,
+        ignoredPaths: ['screenshot'],
+      },
+      serializableCheck: {
+        warnAfter: 128,
+        ignoredPaths: ['screenshot'],
+        ignoredActions: [
+          'screenshot/setPendingRequest',
+          'screenshot/setLastScreenshot',
+        ],
+      },
+    }),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

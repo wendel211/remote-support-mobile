@@ -3,6 +3,7 @@ import {
   push,
   set,
   onValue,
+  serverTimestamp,
   type Unsubscribe,
 } from 'firebase/database';
 import { database } from '@services/firebase';
@@ -20,7 +21,7 @@ export async function sendMessage(
     sessionCode: message.sessionCode,
     text: message.text,
     role: message.role,
-    timestamp: message.timestamp,
+    timestamp: serverTimestamp(),
     status: message.status,
   });
 
@@ -31,7 +32,7 @@ interface FirebaseMessageData {
   sessionCode: string;
   text: string;
   role: MessageRole;
-  timestamp: number;
+  timestamp?: number;
   status: ChatMessage['status'];
 }
 
@@ -54,7 +55,7 @@ export function listenToMessages(
         sessionCode: msg.sessionCode,
         text: msg.text,
         role: msg.role,
-        timestamp: msg.timestamp,
+        timestamp: typeof msg.timestamp === 'number' ? msg.timestamp : Date.now(),
         status: msg.status,
       }))
       .sort((a, b) => a.timestamp - b.timestamp);

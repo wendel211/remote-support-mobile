@@ -13,6 +13,7 @@ export async function requestScreenshot(sessionCode: string): Promise<void> {
   const pendingRef = ref(database, `sessions/${sessionCode}/pendingScreenshot`);
   await set(pendingRef, {
     base64: null,
+    error: null,
     requestedAt: Date.now(),
     sentAt: null,
   });
@@ -25,6 +26,19 @@ export async function sendScreenshot(
   const pendingRef = ref(database, `sessions/${sessionCode}/pendingScreenshot`);
   await update(pendingRef, {
     base64,
+    error: null,
+    sentAt: Date.now(),
+  });
+}
+
+export async function sendScreenshotError(
+  sessionCode: string,
+  error: string,
+): Promise<void> {
+  const pendingRef = ref(database, `sessions/${sessionCode}/pendingScreenshot`);
+  await update(pendingRef, {
+    base64: null,
+    error,
     sentAt: Date.now(),
   });
 }

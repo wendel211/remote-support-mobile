@@ -2,6 +2,7 @@ export interface ScreenshotRequest {
   requestedAt: number;
   sentAt: number | null;
   base64: string | null;
+  error: string | null;
 }
 
 export interface ScreenshotState {

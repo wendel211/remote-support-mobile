@@ -284,18 +284,13 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
 
             <Button
               className="min-h-12"
-              disabled={isLoading}
               variant="outline"
               tone="secondary"
               onPress={() => navigation.navigate('RoleSelection')}
             >
-              {isLoading ? (
-                <ActivityIndicator color="#111827" />
-              ) : (
-                <ButtonText variant="outline" tone="secondary">
-                  Voltar
-                </ButtonText>
-              )}
+              <ButtonText variant="outline" tone="secondary">
+                Voltar
+              </ButtonText>
             </Button>
           </VStack>
         </Box>

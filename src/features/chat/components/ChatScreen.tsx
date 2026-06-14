@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   FlatList,
   KeyboardAvoidingView,
@@ -34,9 +34,22 @@ export function ChatScreen({
   const dispatch = useAppDispatch();
   const messages = useAppSelector((state) => state.chat.messages);
   const isTyping = useAppSelector((state) => state.chat.isTyping);
+  const listRef = useRef<FlatList<ChatMessage>>(null);
 
   const oppositeRole: MessageRole =
     currentRole === 'attendant' ? 'client' : 'attendant';
+
+  const orderedMessages = useMemo(
+    () =>
+      [...messages].sort((a, b) => {
+        if (a.timestamp !== b.timestamp) {
+          return a.timestamp - b.timestamp;
+        }
+
+        return a.id.localeCompare(b.id);
+      }),
+    [messages],
+  );
 
   useEffect(() => {
     const unsubMessages = listenToMessages(
@@ -125,13 +138,23 @@ export function ChatScreen({
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
       <FlatList
+        ref={listRef}
         className="flex-1"
-        data={messages}
+        data={orderedMessages}
         renderItem={renderItem}
         keyExtractor={keyExtractor}
-        inverted
-        contentContainerStyle={{ paddingVertical: 10 }}
-        ListHeaderComponent={
+        contentContainerStyle={{ flexGrow: 1, paddingVertical: 10 }}
+        keyboardShouldPersistTaps="handled"
+        maintainVisibleContentPosition={{
+          minIndexForVisible: 0,
+        }}
+        onContentSizeChange={() => {
+          listRef.current?.scrollToEnd({ animated: true });
+        }}
+        onLayout={() => {
+          listRef.current?.scrollToEnd({ animated: false });
+        }}
+        ListFooterComponent={
           <TypingIndicator visible={isTyping} role={oppositeRole} />
         }
       />

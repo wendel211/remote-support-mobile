@@ -21,11 +21,11 @@ function formatTime(timestamp: number): string {
 function getStatusIndicator(status: ChatMessage['status']): string {
   switch (status) {
     case 'sending':
-      return '⏳';
+      return '...';
     case 'sent':
-      return '✓';
+      return 'ok';
     case 'error':
-      return '✕ Erro';
+      return 'erro';
   }
 }
 
@@ -69,7 +69,7 @@ export function ChatBubble({
                 size="xs"
                 weight="semibold"
               >
-                🌐 Abrir link
+                Abrir link
               </Text>
             </Box>
           </Pressable>

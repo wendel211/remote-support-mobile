@@ -1,6 +1,7 @@
 import React from 'react';
 import { ActivityIndicator } from 'react-native';
-import { Button, ButtonText, HStack, Text } from '@shared/ui';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { Button, ButtonText, HStack } from '@shared/ui';
 
 interface ScreenshotButtonProps {
   onPress: () => void;
@@ -13,11 +14,11 @@ export function ScreenshotButton({
 }: ScreenshotButtonProps): React.JSX.Element {
   return (
     <Button className="min-h-11" disabled={isLoading} onPress={onPress}>
-      <HStack space="sm">
+      <HStack className="items-center justify-center" space="sm">
         {isLoading ? (
           <ActivityIndicator size="small" color="#FFFFFF" />
         ) : (
-          <Text tone="inverse">📷</Text>
+          <MaterialCommunityIcons name="camera" size={18} color="#FFFFFF" />
         )}
         <ButtonText size="sm">
           {isLoading ? 'Solicitando...' : 'Solicitar screenshot'}

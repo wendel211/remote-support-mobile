@@ -10,6 +10,7 @@ export {
 export {
   requestScreenshot,
   sendScreenshot,
+  sendScreenshotError,
   listenToScreenshotRequest,
   clearScreenshotRequest,
 } from './services';

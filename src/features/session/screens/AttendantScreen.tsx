@@ -63,6 +63,7 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
     (state) => state.screenshot.lastScreenshot,
   );
   const isSending = useAppSelector((state) => state.screenshot.isSending);
+  const screenshotError = useAppSelector((state) => state.screenshot.error);
   const sentCommands = useAppSelector(
     (state) => state.commands.sentCommands,
   );
@@ -87,7 +88,15 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
 
     const unsub = listenToScreenshotRequest(sessionCode, (request) => {
       dispatch(setPendingRequest(request));
-      if (request && request.sentAt !== null) {
+
+      if (request?.error) {
+        dispatch(setError(request.error));
+        dispatch(setIsSending(false));
+        void clearScreenshotRequest(sessionCode);
+        return;
+      }
+
+      if (request && request.sentAt !== null && request.base64) {
         dispatch(setLastScreenshot(request.base64));
         dispatch(setIsSending(false));
         void clearScreenshotRequest(sessionCode);
@@ -294,6 +303,13 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
             onPress={() => void handleRequestScreenshot()}
             isLoading={isSending}
           />
+          {screenshotError ? (
+            <Box className="mt-3 rounded-xl border border-red-100 bg-danger-50 px-4 py-3">
+              <Text className="text-center text-[12px]" tone="danger" weight="medium">
+                {screenshotError}
+              </Text>
+            </Box>
+          ) : null}
         </Box>
 
         <CommandPicker
