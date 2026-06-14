@@ -1,11 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import {
-  View,
-  Text,
-  Pressable,
-  ActivityIndicator,
-  StyleSheet,
-} from 'react-native';
+import { ActivityIndicator } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@navigation/types';
 import { useAppDispatch, useAppSelector } from '@store/hooks';
@@ -45,6 +39,7 @@ import {
   acknowledgeCommand,
 } from '@features/commands';
 import type { Command } from '@features/commands';
+import { Box, Button, ButtonText, HStack, Text, VStack } from '@shared/ui';
 
 import { usePerformanceMonitor, useRenderMetric } from '@features/performance';
 
@@ -190,35 +185,45 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
 
   if (isLoading) {
     return (
-      <View style={styles.centeredContainer}>
+      <Box className="flex-1 items-center justify-center bg-background px-8">
         <ActivityIndicator size="large" color="#4F46E5" />
-        <Text style={styles.loadingText}>Criando sessão...</Text>
-      </View>
+        <Text className="mt-4" tone="muted">
+          Criando sessão...
+        </Text>
+      </Box>
     );
   }
 
   if (currentStatus === 'connected') {
     return (
-      <View style={styles.fullContainer}>
-        <View style={styles.header}>
-          <View style={styles.headerInfo}>
-            <Text style={styles.headerTitle}>🛠️ Atendente</Text>
-            <Text style={styles.headerCode}>{sessionCode}</Text>
-          </View>
+      <Box className="flex-1 bg-background">
+        <HStack className="justify-between border-b border-border bg-surface px-5 pb-3 pt-14">
+          <HStack space="sm">
+            <Text size="lg" weight="bold">
+              🛠️ Atendente
+            </Text>
+            <Box className="rounded-ui bg-primary-50 px-3 py-1">
+              <Text size="sm" tone="primary" weight="semibold">
+                {sessionCode}
+              </Text>
+            </Box>
+          </HStack>
           <StatusBadge status={currentStatus} />
-        </View>
+        </HStack>
 
-        <View style={styles.connectedBanner}>
-          <Text style={styles.connectedIcon}>✅</Text>
-          <Text style={styles.connectedText}>Cliente conectado</Text>
-        </View>
+        <HStack className="justify-center bg-accent-50 py-2" space="sm">
+          <Text size="sm">✅</Text>
+          <Text className="text-accent-600" size="sm" weight="semibold">
+            Cliente conectado
+          </Text>
+        </HStack>
 
-        <View style={styles.screenshotActionContainer}>
+        <Box className="border-b border-border bg-surface px-5 py-3">
           <ScreenshotButton
             onPress={() => void handleRequestScreenshot()}
             isLoading={isSending}
           />
-        </View>
+        </Box>
 
         <CommandPicker
           sessionCode={sessionCode}
@@ -239,203 +244,67 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
 
         <ChatScreen sessionCode={sessionCode} currentRole="attendant" />
 
-        <Pressable
-          style={({ pressed }) => [
-            styles.endButton,
-            pressed && styles.endButtonPressed,
-          ]}
+        <Button
+          className="mx-5 my-2"
+          tone="danger"
           onPress={() => void handleEndSession()}
         >
-          <Text style={styles.endButtonText}>Encerrar sessão</Text>
-        </Pressable>
+          <ButtonText tone="danger">Encerrar sessão</ButtonText>
+        </Button>
 
         <ScreenshotViewer
           base64={lastScreenshot}
           onClose={() => dispatch(setLastScreenshot(null))}
         />
-      </View>
+      </Box>
     );
   }
 
   return (
-    <View style={styles.centeredContainer}>
-      <Text style={styles.emoji}>🛠️</Text>
-      <Text style={styles.title}>Painel do Atendente</Text>
+    <Box className="flex-1 justify-center bg-background px-6">
+      <VStack space="xl">
+        <VStack className="items-center" space="sm">
+          <Text className="text-5xl">🛠️</Text>
+          <Text size="2xl" weight="bold">
+            Painel do Atendente
+          </Text>
+          <Text className="text-center leading-5" size="sm" tone="muted">
+            Gere uma sessão e aguarde o cliente entrar pelo código.
+          </Text>
+        </VStack>
 
-      <View style={styles.codeCard}>
-        <Text style={styles.codeLabel}>Código da Sessão</Text>
-        <Text style={styles.codeValue}>{sessionCode}</Text>
-        <Text style={styles.codeHint}>
-          Compartilhe este código com o cliente
-        </Text>
-      </View>
+        <Box className="rounded-panel border border-border bg-surface px-5 py-6 shadow-soft">
+          <VStack className="items-center" space="sm">
+            <Text size="sm" tone="muted" weight="medium">
+              Código da sessão
+            </Text>
+            <Text className="text-4xl tracking-[6px]" tone="primary" weight="bold">
+              {sessionCode}
+            </Text>
+            <Text size="xs" tone="muted">
+              Compartilhe este código com o cliente
+            </Text>
+          </VStack>
+        </Box>
 
-      <StatusBadge status={currentStatus} />
+        <StatusBadge status={currentStatus} />
 
-      {currentStatus === 'ended' && (
-        <View style={styles.endedCard}>
-          <Text style={styles.endedIcon}>🔴</Text>
-          <Text style={styles.endedText}>Sessão encerrada</Text>
-        </View>
-      )}
+        {currentStatus === 'ended' && (
+          <HStack
+            className="justify-center rounded-ui border border-red-100 bg-danger-50 px-5 py-3"
+            space="sm"
+          >
+            <Text>🔴</Text>
+            <Text tone="danger" weight="semibold">
+              Sessão encerrada
+            </Text>
+          </HStack>
+        )}
 
-      <Pressable
-        style={({ pressed }) => [
-          styles.endButton,
-          pressed && styles.endButtonPressed,
-        ]}
-        onPress={() => void handleEndSession()}
-      >
-        <Text style={styles.endButtonText}>Encerrar sessão</Text>
-      </Pressable>
-    </View>
+        <Button tone="danger" onPress={() => void handleEndSession()}>
+          <ButtonText tone="danger">Encerrar sessão</ButtonText>
+        </Button>
+      </VStack>
+    </Box>
   );
 }
-
-const styles = StyleSheet.create({
-  centeredContainer: {
-    flex: 1,
-    backgroundColor: '#F0F4FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 32,
-  },
-  fullContainer: {
-    flex: 1,
-    backgroundColor: '#F0F4FF',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 56,
-    paddingBottom: 12,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  headerInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1A1A2E',
-  },
-  headerCode: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#4F46E5',
-    backgroundColor: '#EEF2FF',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    overflow: 'hidden',
-  },
-  connectedBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#ECFDF5',
-    paddingVertical: 8,
-  },
-  connectedIcon: {
-    fontSize: 14,
-    marginRight: 6,
-  },
-  connectedText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#065F46',
-  },
-  loadingText: {
-    fontSize: 16,
-    color: '#6B7280',
-    marginTop: 16,
-  },
-  emoji: {
-    fontSize: 48,
-    marginBottom: 8,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#1A1A2E',
-    marginBottom: 32,
-  },
-  codeCard: {
-    width: '100%',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    paddingVertical: 24,
-    paddingHorizontal: 20,
-    alignItems: 'center',
-    marginBottom: 24,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  codeLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#6B7280',
-    marginBottom: 8,
-  },
-  codeValue: {
-    fontSize: 36,
-    fontWeight: '800',
-    color: '#4F46E5',
-    letterSpacing: 6,
-    marginBottom: 8,
-  },
-  codeHint: {
-    fontSize: 12,
-    color: '#9CA3AF',
-  },
-  endedCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FEF2F2',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 12,
-    marginTop: 20,
-  },
-  endedIcon: {
-    fontSize: 18,
-    marginRight: 8,
-  },
-  endedText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#991B1B',
-  },
-  endButton: {
-    marginHorizontal: 20,
-    marginVertical: 8,
-    paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: '#EF4444',
-    alignItems: 'center',
-  },
-  endButtonPressed: {
-    opacity: 0.85,
-  },
-  endButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  screenshotActionContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-});

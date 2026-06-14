@@ -1,12 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  Pressable,
-  ActivityIndicator,
-  StyleSheet,
-} from 'react-native';
+import { ActivityIndicator } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@navigation/types';
 import { useAppDispatch, useAppSelector } from '@store/hooks';
@@ -35,6 +28,15 @@ import {
 } from '@features/commands';
 
 import { usePerformanceMonitor, useRenderMetric } from '@features/performance';
+import {
+  Box,
+  Button,
+  ButtonText,
+  HStack,
+  Input,
+  Text,
+  VStack,
+} from '@shared/ui';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Client'>;
 
@@ -141,290 +143,132 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
 
   if (isConnected) {
     return (
-      <ViewShot ref={captureRef} style={styles.fullContainer}>
-        <View style={styles.header}>
-          <View style={styles.headerInfo}>
-            <Text style={styles.headerTitle}>👤 Cliente</Text>
-            <Text style={styles.headerCode}>{connectedCode}</Text>
-          </View>
+      <ViewShot ref={captureRef} style={{ flex: 1 }}>
+        <Box className="flex-1 bg-background">
+          <HStack className="justify-between border-b border-border bg-surface px-5 pb-3 pt-14">
+            <HStack space="sm">
+              <Text size="lg" weight="bold">
+                👤 Cliente
+              </Text>
+              <Box className="rounded-ui bg-primary-50 px-3 py-1">
+                <Text size="sm" tone="primary" weight="semibold">
+                  {connectedCode}
+                </Text>
+              </Box>
+            </HStack>
           <StatusBadge status="connected" />
-        </View>
+          </HStack>
 
-        {isSending && (
-          <View style={styles.sendingIndicator}>
-            <Text style={styles.sendingText}>Enviando screenshot...</Text>
-          </View>
-        )}
+          {isSending && (
+            <Box className="border-b border-orange-100 bg-warning-50 py-2">
+              <Text
+                className="text-center text-warning-500"
+                size="xs"
+                weight="semibold"
+              >
+                Enviando screenshot...
+              </Text>
+            </Box>
+          )}
 
-        <View style={styles.connectedBanner}>
-          <Text style={styles.connectedIcon}>✅</Text>
-          <Text style={styles.connectedText}>Conectado ao Atendente</Text>
-        </View>
+          <HStack className="justify-center bg-accent-50 py-2" space="sm">
+            <Text size="sm">✅</Text>
+            <Text className="text-accent-600" size="sm" weight="semibold">
+              Conectado ao atendente
+            </Text>
+          </HStack>
 
-        <ChatScreen sessionCode={connectedCode} currentRole="client" />
+          <ChatScreen sessionCode={connectedCode} currentRole="client" />
 
-        <Pressable
-          style={({ pressed }) => [
-            styles.leaveButton,
-            pressed && styles.leaveButtonPressed,
-          ]}
-          onPress={() => void handleLeaveSession()}
-        >
-          <Text style={styles.leaveButtonText}>Sair da sessão</Text>
-        </Pressable>
+          <Button
+            className="mx-5 my-2"
+            tone="danger"
+            onPress={() => void handleLeaveSession()}
+          >
+            <ButtonText tone="danger">Sair da sessão</ButtonText>
+          </Button>
 
-        <CommandModal
-          command={pendingCommand}
-          onAcknowledge={() => {
-            if (pendingCommand) {
-              void acknowledgeCommand(connectedCode, pendingCommand.id);
-              if (
-                pendingCommand.type === 'NAVIGATE_URL' &&
-                pendingCommand.payload?.url
-              ) {
-                navigation.navigate('WebView', {
-                  url: pendingCommand.payload.url,
-                });
+          <CommandModal
+            command={pendingCommand}
+            onAcknowledge={() => {
+              if (pendingCommand) {
+                void acknowledgeCommand(connectedCode, pendingCommand.id);
+                if (
+                  pendingCommand.type === 'NAVIGATE_URL' &&
+                  pendingCommand.payload?.url
+                ) {
+                  navigation.navigate('WebView', {
+                    url: pendingCommand.payload.url,
+                  });
+                }
+                dispatch(setPendingCommand(null));
               }
-              dispatch(setPendingCommand(null));
-            }
-          }}
-        />
+            }}
+          />
+        </Box>
       </ViewShot>
     );
   }
 
   return (
-    <View style={styles.centeredContainer}>
-      <Text style={styles.emoji}>👤</Text>
-      <Text style={styles.title}>Entrar na Sessão</Text>
-      <Text style={styles.subtitle}>
-        Digite o código fornecido pelo atendente
-      </Text>
+    <Box className="flex-1 justify-center bg-background px-6">
+      <VStack space="xl">
+        <VStack className="items-center" space="sm">
+          <Text className="text-5xl">👤</Text>
+          <Text size="2xl" weight="bold">
+            Entrar na sessão
+          </Text>
+          <Text className="text-center leading-5" size="sm" tone="muted">
+            Digite o código de 6 caracteres fornecido pelo atendente.
+          </Text>
+        </VStack>
 
-      <View style={styles.inputCard}>
-        <TextInput
-          style={styles.input}
-          value={code}
-          onChangeText={handleCodeChange}
-          placeholder="CÓDIGO"
-          placeholderTextColor="#C4C4C4"
-          maxLength={6}
-          autoCapitalize="characters"
-          autoCorrect={false}
-          editable={!isLoading}
-        />
-      </View>
+        <Box className="rounded-panel border border-border bg-surface p-5 shadow-soft">
+          <VStack space="md">
+            <Input
+              className="min-h-16 text-center text-2xl font-bold tracking-[8px]"
+              value={code}
+              onChangeText={handleCodeChange}
+              placeholder="CÓDIGO"
+              maxLength={6}
+              autoCapitalize="characters"
+              autoCorrect={false}
+              editable={!isLoading}
+            />
 
-      {error ? (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error}</Text>
-        </View>
-      ) : null}
+            {error ? (
+              <Box className="rounded-ui border border-red-100 bg-danger-50 px-4 py-3">
+                <Text className="text-center" size="sm" tone="danger" weight="medium">
+                  {error}
+                </Text>
+              </Box>
+            ) : null}
 
-      <Pressable
-        style={({ pressed }) => [
-          styles.joinButton,
-          pressed && styles.joinButtonPressed,
-          (isLoading || code.length !== 6) && styles.joinButtonDisabled,
-        ]}
-        onPress={() => void handleJoinSession()}
-        disabled={isLoading || code.length !== 6}
-      >
-        {isLoading ? (
-          <ActivityIndicator color="#FFFFFF" />
-        ) : (
-          <Text style={styles.joinButtonText}>Entrar na sessão</Text>
-        )}
-      </Pressable>
+            <Button
+              isLoading={isLoading}
+              disabled={isLoading || code.length !== 6}
+              onPress={() => void handleJoinSession()}
+            >
+              <ButtonText>Entrar na sessão</ButtonText>
+            </Button>
 
-      <Pressable
-        style={({ pressed }) => [
-          styles.backButton,
-          pressed && styles.backButtonPressed,
-        ]}
-        onPress={() => navigation.navigate('RoleSelection')}
-        disabled={isLoading}
-      >
-        <Text style={styles.backButtonText}>Voltar</Text>
-      </Pressable>
-    </View>
+            <Button
+              disabled={isLoading}
+              variant="outline"
+              tone="secondary"
+              onPress={() => navigation.navigate('RoleSelection')}
+            >
+              {isLoading ? (
+                <ActivityIndicator color="#111827" />
+              ) : (
+                <ButtonText variant="outline" tone="secondary">
+                  Voltar
+                </ButtonText>
+              )}
+            </Button>
+          </VStack>
+        </Box>
+      </VStack>
+    </Box>
   );
 }
-
-const styles = StyleSheet.create({
-  centeredContainer: {
-    flex: 1,
-    backgroundColor: '#F0F4FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 32,
-  },
-  fullContainer: {
-    flex: 1,
-    backgroundColor: '#F0F4FF',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 56,
-    paddingBottom: 12,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  headerInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1A1A2E',
-  },
-  headerCode: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#0EA5E9',
-    backgroundColor: '#F0F9FF',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    overflow: 'hidden',
-  },
-  connectedBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#ECFDF5',
-    paddingVertical: 8,
-  },
-  connectedIcon: {
-    fontSize: 14,
-    marginRight: 6,
-  },
-  connectedText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#065F46',
-  },
-  emoji: {
-    fontSize: 48,
-    marginBottom: 8,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#1A1A2E',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginBottom: 32,
-    textAlign: 'center',
-  },
-  inputCard: {
-    width: '100%',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    marginBottom: 16,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  input: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#1A1A2E',
-    textAlign: 'center',
-    letterSpacing: 8,
-    paddingVertical: 16,
-  },
-  errorContainer: {
-    width: '100%',
-    backgroundColor: '#FEF2F2',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginBottom: 16,
-  },
-  errorText: {
-    fontSize: 14,
-    color: '#DC2626',
-    textAlign: 'center',
-    fontWeight: '500',
-  },
-  joinButton: {
-    width: '100%',
-    paddingVertical: 16,
-    borderRadius: 12,
-    backgroundColor: '#0EA5E9',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  joinButtonPressed: {
-    opacity: 0.85,
-  },
-  joinButtonDisabled: {
-    opacity: 0.5,
-  },
-  joinButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  backButton: {
-    width: '100%',
-    paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: 'transparent',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-  },
-  backButtonPressed: {
-    opacity: 0.7,
-  },
-  backButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#6B7280',
-  },
-  leaveButton: {
-    marginHorizontal: 20,
-    marginVertical: 8,
-    paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: '#EF4444',
-    alignItems: 'center',
-  },
-  leaveButtonPressed: {
-    opacity: 0.85,
-  },
-  leaveButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  sendingIndicator: {
-    backgroundColor: '#FEF3C7',
-    paddingVertical: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#FDE68A',
-  },
-  sendingText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#D97706',
-  },
-});
