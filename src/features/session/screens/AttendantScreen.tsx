@@ -41,6 +41,8 @@ import {
   sendCommand,
   addSentCommand,
   CommandPicker,
+  listenToPendingCommand,
+  acknowledgeCommand,
 } from '@features/commands';
 import type { Command } from '@features/commands';
 
@@ -57,6 +59,9 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
     (state) => state.screenshot.lastScreenshot,
   );
   const isSending = useAppSelector((state) => state.screenshot.isSending);
+  const sentCommands = useAppSelector(
+    (state) => state.commands.sentCommands,
+  );
 
   const handleRequestScreenshot = useCallback(async () => {
     dispatch(setIsSending(true));
@@ -89,6 +94,33 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
       unsub();
     };
   }, [currentStatus, sessionCode, dispatch]);
+
+  useEffect(() => {
+    if (currentStatus !== 'connected' || !sessionCode) {
+      return undefined;
+    }
+
+    const unsubscribeCommands = listenToPendingCommand(
+      sessionCode,
+      (command) => {
+        if (command) {
+          const isSentByMe = sentCommands.some((c) => c.id === command.id);
+          if (!isSentByMe) {
+            if (command.type === 'NAVIGATE_URL' && command.payload?.url) {
+              navigation.navigate('WebView', {
+                url: command.payload.url,
+              });
+              void acknowledgeCommand(sessionCode, command.id);
+            }
+          }
+        }
+      },
+    );
+
+    return () => {
+      unsubscribeCommands();
+    };
+  }, [currentStatus, sessionCode, sentCommands, navigation]);
 
   const initSession = useCallback(async () => {
     setIsLoading(true);

@@ -1,5 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '@navigation/types';
 import type { ChatMessage, MessageRole } from '../types';
 
 interface ChatBubbleProps {
@@ -29,7 +32,17 @@ export function ChatBubble({
   message,
   currentRole,
 }: ChatBubbleProps): React.JSX.Element {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const isOwn = message.role === currentRole;
+  
+  const textTrimmed = message.text.trim();
+  const isUrl = /^https?:\/\/[^\s]+$/i.test(textTrimmed);
+
+  const handlePressUrl = (): void => {
+    if (isUrl) {
+      navigation.navigate('WebView', { url: textTrimmed });
+    }
+  };
 
   return (
     <View
@@ -44,14 +57,44 @@ export function ChatBubble({
           isOwn ? styles.bubbleOwn : styles.bubbleOther,
         ]}
       >
-        <Text
-          style={[
-            styles.text,
-            isOwn ? styles.textOwn : styles.textOther,
-          ]}
-        >
-          {message.text}
-        </Text>
+        {isUrl ? (
+          <Pressable onPress={handlePressUrl} style={styles.linkCard}>
+            <Text
+              style={[
+                styles.text,
+                isOwn ? styles.textOwn : styles.textOther,
+                styles.linkText,
+                !isOwn && styles.linkTextOther,
+              ]}
+            >
+              {message.text}
+            </Text>
+            <View
+              style={[
+                styles.linkBadge,
+                isOwn ? styles.linkBadgeOwn : styles.linkBadgeOther,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.linkBadgeText,
+                  isOwn ? styles.linkBadgeTextOwn : styles.linkBadgeTextOther,
+                ]}
+              >
+                🌐 Abrir Link
+              </Text>
+            </View>
+          </Pressable>
+        ) : (
+          <Text
+            style={[
+              styles.text,
+              isOwn ? styles.textOwn : styles.textOther,
+            ]}
+          >
+            {message.text}
+          </Text>
+        )}
         <View style={styles.meta}>
           <Text
             style={[
@@ -112,6 +155,39 @@ const styles = StyleSheet.create({
   textOther: {
     color: '#1A1A2E',
   },
+  linkCard: {
+    alignItems: 'flex-start',
+  },
+  linkText: {
+    textDecorationLine: 'underline',
+  },
+  linkTextOther: {
+    color: '#2563EB',
+  },
+  linkBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    marginTop: 8,
+  },
+  linkBadgeOwn: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  linkBadgeOther: {
+    backgroundColor: '#DBEAFE',
+  },
+  linkBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  linkBadgeTextOwn: {
+    color: '#FFFFFF',
+  },
+  linkBadgeTextOther: {
+    color: '#1E40AF',
+  },
   meta: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -135,3 +211,4 @@ const styles = StyleSheet.create({
     color: '#FCA5A5',
   },
 });
+
