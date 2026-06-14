@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { Pressable } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@navigation/types';
+import { Box, HStack, Text } from '@shared/ui';
 import type { ChatMessage, MessageRole } from '../types';
 
 interface ChatBubbleProps {
@@ -24,7 +25,7 @@ function getStatusIndicator(status: ChatMessage['status']): string {
     case 'sent':
       return '✓';
     case 'error':
-      return '✗ Erro';
+      return '✕ Erro';
   }
 }
 
@@ -34,7 +35,7 @@ export function ChatBubble({
 }: ChatBubbleProps): React.JSX.Element {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const isOwn = message.role === currentRole;
-  
+
   const textTrimmed = message.text.trim();
   const isUrl = /^https?:\/\/[^\s]+$/i.test(textTrimmed);
 
@@ -44,171 +45,54 @@ export function ChatBubble({
     }
   };
 
+  const bubbleClass = isOwn
+    ? 'self-end rounded-br bg-primary-600'
+    : 'self-start rounded-bl bg-slate-200';
+  const textClass = isOwn ? 'text-white' : 'text-foreground';
+  const metaClass = isOwn ? 'text-white/70' : 'text-slate-500';
+
   return (
-    <View
-      style={[
-        styles.wrapper,
-        isOwn ? styles.wrapperOwn : styles.wrapperOther,
-      ]}
-    >
-      <View
-        style={[
-          styles.bubble,
-          isOwn ? styles.bubbleOwn : styles.bubbleOther,
-        ]}
-      >
+    <Box className="px-3 py-1">
+      <Box className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 ${bubbleClass}`}>
         {isUrl ? (
-          <Pressable onPress={handlePressUrl} style={styles.linkCard}>
-            <Text
-              style={[
-                styles.text,
-                isOwn ? styles.textOwn : styles.textOther,
-                styles.linkText,
-                !isOwn && styles.linkTextOther,
-              ]}
-            >
+          <Pressable className="items-start" onPress={handlePressUrl}>
+            <Text className={`underline ${textClass}`} size="sm">
               {message.text}
             </Text>
-            <View
-              style={[
-                styles.linkBadge,
-                isOwn ? styles.linkBadgeOwn : styles.linkBadgeOther,
-              ]}
+            <Box
+              className={`mt-2 rounded-ui px-3 py-1.5 ${
+                isOwn ? 'bg-white/20' : 'bg-primary-50'
+              }`}
             >
               <Text
-                style={[
-                  styles.linkBadgeText,
-                  isOwn ? styles.linkBadgeTextOwn : styles.linkBadgeTextOther,
-                ]}
+                className={isOwn ? 'text-white' : 'text-primary-700'}
+                size="xs"
+                weight="semibold"
               >
-                🌐 Abrir Link
+                🌐 Abrir link
               </Text>
-            </View>
+            </Box>
           </Pressable>
         ) : (
-          <Text
-            style={[
-              styles.text,
-              isOwn ? styles.textOwn : styles.textOther,
-            ]}
-          >
+          <Text className={textClass} size="sm">
             {message.text}
           </Text>
         )}
-        <View style={styles.meta}>
-          <Text
-            style={[
-              styles.time,
-              isOwn ? styles.timeOwn : styles.timeOther,
-            ]}
-          >
+
+        <HStack className="mt-1" space="xs">
+          <Text className={metaClass} size="xs">
             {formatTime(message.timestamp)}
           </Text>
           {isOwn && (
             <Text
-              style={[
-                styles.status,
-                message.status === 'error' && styles.statusError,
-              ]}
+              className={message.status === 'error' ? 'text-red-200' : metaClass}
+              size="xs"
             >
               {getStatusIndicator(message.status)}
             </Text>
           )}
-        </View>
-      </View>
-    </View>
+        </HStack>
+      </Box>
+    </Box>
   );
 }
-
-const styles = StyleSheet.create({
-  wrapper: {
-    marginVertical: 3,
-    paddingHorizontal: 12,
-  },
-  wrapperOwn: {
-    alignItems: 'flex-end',
-  },
-  wrapperOther: {
-    alignItems: 'flex-start',
-  },
-  bubble: {
-    maxWidth: '80%',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 16,
-  },
-  bubbleOwn: {
-    backgroundColor: '#4F46E5',
-    borderBottomRightRadius: 4,
-  },
-  bubbleOther: {
-    backgroundColor: '#E5E7EB',
-    borderBottomLeftRadius: 4,
-  },
-  text: {
-    fontSize: 15,
-    lineHeight: 20,
-  },
-  textOwn: {
-    color: '#FFFFFF',
-  },
-  textOther: {
-    color: '#1A1A2E',
-  },
-  linkCard: {
-    alignItems: 'flex-start',
-  },
-  linkText: {
-    textDecorationLine: 'underline',
-  },
-  linkTextOther: {
-    color: '#2563EB',
-  },
-  linkBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    marginTop: 8,
-  },
-  linkBadgeOwn: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  linkBadgeOther: {
-    backgroundColor: '#DBEAFE',
-  },
-  linkBadgeText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  linkBadgeTextOwn: {
-    color: '#FFFFFF',
-  },
-  linkBadgeTextOther: {
-    color: '#1E40AF',
-  },
-  meta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 4,
-    gap: 6,
-  },
-  time: {
-    fontSize: 11,
-  },
-  timeOwn: {
-    color: 'rgba(255, 255, 255, 0.7)',
-  },
-  timeOther: {
-    color: '#9CA3AF',
-  },
-  status: {
-    fontSize: 11,
-    color: 'rgba(255, 255, 255, 0.7)',
-  },
-  statusError: {
-    color: '#FCA5A5',
-  },
-});
-

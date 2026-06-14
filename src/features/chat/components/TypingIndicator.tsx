@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import { Animated, StyleSheet } from 'react-native';
+import { Animated } from 'react-native';
+import { Box, Text } from '@shared/ui';
 import type { MessageRole } from '../types';
 
 interface TypingIndicatorProps {
@@ -50,20 +51,12 @@ export function TypingIndicator({
   }
 
   return (
-    <Animated.View style={[styles.container, { opacity }]}>
-      <Animated.Text style={styles.text}>{ROLE_LABELS[role]}</Animated.Text>
+    <Animated.View style={{ opacity }}>
+      <Box className="px-4 py-1.5">
+        <Text className="italic" size="sm" tone="muted">
+          {ROLE_LABELS[role]}
+        </Text>
+      </Box>
     </Animated.View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-  },
-  text: {
-    fontSize: 13,
-    fontStyle: 'italic',
-    color: '#6B7280',
-  },
-});

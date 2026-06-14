@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { View, TextInput, Pressable, Text, StyleSheet } from 'react-native';
+import { Button, ButtonText, HStack, Input } from '@shared/ui';
 
 interface ChatInputProps {
   onSend: (text: string) => void;
@@ -70,80 +70,22 @@ export function ChatInput({
   const isSendDisabled = text.trim().length === 0 || disabled;
 
   return (
-    <View style={styles.container}>
-      <TextInput
-        style={styles.input}
+    <HStack className="items-end border-t border-border bg-surface px-3 py-2" space="sm">
+      <Input
+        className="max-h-[100px] flex-1 rounded-full bg-slate-100"
         value={text}
         onChangeText={handleChangeText}
         placeholder="Digite uma mensagem..."
-        placeholderTextColor="#9CA3AF"
         multiline
         editable={!disabled}
       />
-      <Pressable
-        style={({ pressed }) => [
-          styles.sendButton,
-          isSendDisabled && styles.sendButtonDisabled,
-          pressed && !isSendDisabled && styles.sendButtonPressed,
-        ]}
-        onPress={handleSend}
+      <Button
+        className="min-h-11 rounded-full px-5"
         disabled={isSendDisabled}
+        onPress={handleSend}
       >
-        <Text
-          style={[
-            styles.sendButtonText,
-            isSendDisabled && styles.sendButtonTextDisabled,
-          ]}
-        >
-          Enviar
-        </Text>
-      </Pressable>
-    </View>
+        <ButtonText size="sm">Enviar</ButtonText>
+      </Button>
+    </HStack>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
-  },
-  input: {
-    flex: 1,
-    minHeight: 40,
-    maxHeight: 100,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    fontSize: 15,
-    color: '#1A1A2E',
-    marginRight: 8,
-  },
-  sendButton: {
-    backgroundColor: '#4F46E5',
-    borderRadius: 20,
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  sendButtonDisabled: {
-    backgroundColor: '#D1D5DB',
-  },
-  sendButtonPressed: {
-    opacity: 0.85,
-  },
-  sendButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  sendButtonTextDisabled: {
-    color: '#9CA3AF',
-  },
-});
