@@ -16,4 +16,6 @@ export {
 
 export { useScreenshotCapture } from './hooks';
 
+export { ScreenshotViewer, ScreenshotButton } from './components';
+
 export type { ScreenshotRequest, ScreenshotState } from './types';

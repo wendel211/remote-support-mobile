@@ -25,6 +25,8 @@ import { clearMessages } from '@features/chat/store';
 import type { Session } from '@features/session/types';
 import { StatusBadge } from '@shared/components';
 import { ChatScreen } from '@features/chat/components';
+import ViewShot from 'react-native-view-shot';
+import { useScreenshotCapture } from '@features/screenshot';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Client'>;
 
@@ -36,6 +38,8 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
   const [isConnected, setIsConnected] = useState(false);
   const [connectedCode, setConnectedCode] = useState('');
   const unsubscribeRef = useRef<(() => void) | null>(null);
+
+  const { captureRef, isSending } = useScreenshotCapture(connectedCode);
 
   const handleJoinSession = useCallback(async () => {
     if (code.length !== 6) {
@@ -105,7 +109,7 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
 
   if (isConnected) {
     return (
-      <View style={styles.fullContainer}>
+      <ViewShot ref={captureRef} style={styles.fullContainer}>
         <View style={styles.header}>
           <View style={styles.headerInfo}>
             <Text style={styles.headerTitle}>👤 Cliente</Text>
@@ -113,6 +117,12 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
           </View>
           <StatusBadge status="connected" />
         </View>
+
+        {isSending && (
+          <View style={styles.sendingIndicator}>
+            <Text style={styles.sendingText}>Enviando screenshot...</Text>
+          </View>
+        )}
 
         <View style={styles.connectedBanner}>
           <Text style={styles.connectedIcon}>✅</Text>
@@ -130,7 +140,7 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
         >
           <Text style={styles.leaveButtonText}>Sair da sessão</Text>
         </Pressable>
-      </View>
+      </ViewShot>
     );
   }
 
@@ -353,5 +363,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
+  },
+  sendingIndicator: {
+    backgroundColor: '#FEF3C7',
+    paddingVertical: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#FDE68A',
+  },
+  sendingText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#D97706',
   },
 });

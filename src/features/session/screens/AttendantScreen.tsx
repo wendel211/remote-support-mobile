@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@navigation/types';
-import { useAppDispatch } from '@store/hooks';
+import { useAppDispatch, useAppSelector } from '@store/hooks';
 import {
   generateSessionCode,
   createSession,
@@ -25,6 +25,18 @@ import { clearMessages } from '@features/chat/store';
 import type { Session, SessionStatus } from '@features/session/types';
 import { StatusBadge } from '@shared/components';
 import { ChatScreen } from '@features/chat/components';
+import {
+  requestScreenshot,
+  listenToScreenshotRequest,
+  clearScreenshotRequest,
+  setLastScreenshot,
+  setIsSending,
+  setError,
+  clearScreenshot,
+  setPendingRequest,
+  ScreenshotButton,
+  ScreenshotViewer,
+} from '@features/screenshot';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Attendant'>;
 
@@ -34,6 +46,43 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
   const [sessionCode, setSessionCode] = useState('');
   const [currentStatus, setCurrentStatus] = useState<SessionStatus>('idle');
   const unsubscribeRef = useRef<(() => void) | null>(null);
+
+  const lastScreenshot = useAppSelector(
+    (state) => state.screenshot.lastScreenshot,
+  );
+  const isSending = useAppSelector((state) => state.screenshot.isSending);
+
+  const handleRequestScreenshot = useCallback(async () => {
+    dispatch(setIsSending(true));
+    dispatch(setError(null));
+    try {
+      await requestScreenshot(sessionCode);
+    } catch (err: unknown) {
+      dispatch(setIsSending(false));
+      const errorMessage =
+        err instanceof Error ? err.message : 'Erro ao solicitar screenshot';
+      dispatch(setError(errorMessage));
+    }
+  }, [sessionCode, dispatch]);
+
+  useEffect(() => {
+    if (currentStatus !== 'connected' || !sessionCode) {
+      return undefined;
+    }
+
+    const unsub = listenToScreenshotRequest(sessionCode, (request) => {
+      dispatch(setPendingRequest(request));
+      if (request && request.sentAt !== null) {
+        dispatch(setLastScreenshot(request.base64));
+        dispatch(setIsSending(false));
+        void clearScreenshotRequest(sessionCode);
+      }
+    });
+
+    return () => {
+      unsub();
+    };
+  }, [currentStatus, sessionCode, dispatch]);
 
   const initSession = useCallback(async () => {
     setIsLoading(true);
@@ -91,6 +140,7 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
       await endSession(sessionCode);
       dispatch(clearMessages());
       dispatch(clearSession());
+      dispatch(clearScreenshot());
       navigation.navigate('RoleSelection');
     }
   }, [sessionCode, dispatch, navigation]);
@@ -120,6 +170,13 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
           <Text style={styles.connectedText}>Cliente conectado</Text>
         </View>
 
+        <View style={styles.screenshotActionContainer}>
+          <ScreenshotButton
+            onPress={() => void handleRequestScreenshot()}
+            isLoading={isSending}
+          />
+        </View>
+
         <ChatScreen sessionCode={sessionCode} currentRole="attendant" />
 
         <Pressable
@@ -131,6 +188,11 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
         >
           <Text style={styles.endButtonText}>Encerrar sessão</Text>
         </Pressable>
+
+        <ScreenshotViewer
+          base64={lastScreenshot}
+          onClose={() => dispatch(setLastScreenshot(null))}
+        />
       </View>
     );
   }
@@ -308,5 +370,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
+  },
+  screenshotActionContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
 });
