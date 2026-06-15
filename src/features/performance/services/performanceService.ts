@@ -187,140 +187,188 @@ export function generateReport(
 export function printReport(report: PerformanceReport): void {
   const durationSec = (report.sessionDurationMs / 1000).toFixed(1);
   const isoDate = new Date(report.generatedAt).toISOString();
-  const fpsStatus = getFPSStatus(report.averageFPS, report.jankRatePercent);
+  const fpsStatus = getFPSStatus(report);
   const renderStatus = getRenderStatus(report.componentRenderTimes);
   const memoryStatus = getMemoryStatus(report);
+  const refreshRateNote = getRefreshRateNote(report.averageFPS);
+  const topRenderComponents = Object.entries(report.componentRenderTimes)
+    .sort(([, a], [, b]) => b.p95 - a.p95)
+    .slice(0, 5)
+    .map(([name, stats], index) =>
+      `${index + 1}. ${name}: avg ${stats.average}ms | p95 ${stats.p95}ms | max ${stats.max}ms | renders ${stats.count}`,
+    );
 
-  console.group('PERFORMANCE REPORT - SUPPORT SESSION');
-  console.log('Relatório final gerado ao encerrar ou desmontar a sessão de suporte.');
+  console.log('\n');
+  console.log('============================================================');
+  console.log('PERFORMANCE REPORT - SUPPORT SESSION');
+  console.log('Generated when the support session was ended');
+  console.log('============================================================');
+  console.log(`Session code: ${report.sessionCode}`);
+  console.log(`Duration: ${durationSec}s`);
+  console.log(`Generated at: ${isoDate}`);
+  console.log('------------------------------------------------------------');
+  console.log('FPS');
+  console.log(`Average FPS: ${report.averageFPS}`);
+  console.log(`Refresh rate note: ${refreshRateNote}`);
+  console.log(`Min/Max FPS: ${report.minFPS} / ${report.maxFPS}`);
+  console.log(`Average frame time: ${report.averageFrameTimeMs}ms`);
+  console.log(`P95 frame time: ${report.fpsP95FrameTimeMs}ms`);
+  console.log(`Worst frame time: ${report.worstFrameTimeMs}ms`);
+  console.log(`Dropped frames estimate: ${report.droppedFrames}`);
+  console.log(`Janky frames: ${report.jankyFrames} (${report.jankRatePercent}%)`);
+  console.log(`FPS diagnosis: ${fpsStatus}`);
+  console.log('------------------------------------------------------------');
+  console.log('RENDER BY COMPONENT');
+  console.log(`Render samples: ${report.renderSampleCount}`);
+  if (topRenderComponents.length > 0) {
+    topRenderComponents.forEach((line) => console.log(line));
+  } else {
+    console.log('No component render samples collected.');
+  }
+  console.log(`Render diagnosis: ${renderStatus}`);
+  console.log('------------------------------------------------------------');
+  console.log('JS HEAP MEMORY');
+  console.log(`Memory available: ${report.memoryAvailable ? 'yes' : 'no'}`);
+  console.log(`Memory source: ${report.memorySource}`);
+  console.log(`Initial heap: ${report.memoryAvailable ? `${report.initialJSHeapMB} MB` : '-'}`);
+  console.log(`Final heap: ${report.memoryAvailable ? `${report.finalJSHeapMB} MB` : '-'}`);
+  console.log(`Average heap: ${report.memoryAvailable ? `${report.averageJSHeapMB} MB` : '-'}`);
+  console.log(`Peak heap: ${report.memoryAvailable ? `${report.peakJSHeapMB} MB` : '-'}`);
+  console.log(`Heap delta: ${report.memoryAvailable ? `${report.heapDeltaMB} MB` : '-'}`);
+  console.log(`Memory diagnosis: ${memoryStatus}`);
+  console.log('============================================================');
+  console.log('\n');
+
+  console.group('PERFORMANCE REPORT - SUPPORT SESSION - DETAILS');
+  console.log('Relatorio final gerado ao encerrar a sessao de suporte.');
   console.log('Coleta: FPS via requestAnimationFrame, render por commit de componente e JS heap quando exposto pelo runtime.');
 
   console.table([
-    { Campo: 'Código da sessão', Valor: report.sessionCode },
-    { Campo: 'Duração monitorada', Valor: `${durationSec}s` },
+    { Campo: 'Codigo da sessao', Valor: report.sessionCode },
+    { Campo: 'Duracao monitorada', Valor: `${durationSec}s` },
     { Campo: 'Gerado em', Valor: isoDate },
     { Campo: 'Amostras de FPS', Valor: report.frameSampleCount },
-    { Campo: 'Amostras de memória', Valor: report.memorySampleCount },
+    { Campo: 'Amostras de memoria', Valor: report.memorySampleCount },
     { Campo: 'Amostras de render', Valor: report.renderSampleCount },
   ]);
 
   console.log('1. FPS e fluidez');
   console.table([
     {
-      Métrica: 'FPS médio',
+      Metrica: 'FPS medio',
       Valor: report.averageFPS,
-      Interpretação: fpsStatus,
+      Interpretacao: refreshRateNote,
     },
     {
-      Métrica: 'FPS mínimo por janela',
+      Metrica: 'FPS minimo por janela',
       Valor: report.minFPS,
-      Interpretação: report.minFPS >= 50 ? 'Sem queda relevante' : 'Houve janela abaixo do ideal',
+      Interpretacao: report.minFPS >= 50 ? 'Sem queda relevante' : 'Houve janela abaixo do ideal',
     },
     {
-      Métrica: 'FPS máximo por janela',
+      Metrica: 'FPS maximo por janela',
       Valor: report.maxFPS,
-      Interpretação: 'Maior janela observada',
+      Interpretacao: 'Maior janela observada',
     },
     {
-      Métrica: 'Frame médio',
+      Metrica: 'Frame medio',
       Valor: `${report.averageFrameTimeMs} ms`,
-      Interpretação: report.averageFrameTimeMs <= TARGET_FRAME_MS ? 'Dentro do orçamento de 60 FPS' : 'Acima de 16.67 ms',
+      Interpretacao: report.averageFrameTimeMs <= TARGET_FRAME_MS ? 'Dentro do orcamento de 60 FPS' : 'Acima de 16.67 ms',
     },
     {
-      Métrica: 'P95 de frame',
+      Metrica: 'P95 de frame',
       Valor: `${report.fpsP95FrameTimeMs} ms`,
-      Interpretação: report.fpsP95FrameTimeMs <= JANK_FRAME_MS ? 'Sem jank crítico frequente' : 'Jank perceptível no P95',
+      Interpretacao: report.fpsP95FrameTimeMs <= JANK_FRAME_MS ? 'Sem jank critico frequente' : 'Jank perceptivel no P95',
     },
     {
-      Métrica: 'Pior frame',
+      Metrica: 'Pior frame',
       Valor: `${report.worstFrameTimeMs} ms`,
-      Interpretação: report.worstFrameTimeMs <= JANK_FRAME_MS ? 'Sem travada crítica' : 'Travada pontual detectada',
+      Interpretacao: report.worstFrameTimeMs <= JANK_FRAME_MS ? 'Sem travada critica' : 'Travada pontual detectada',
     },
     {
-      Métrica: 'Frames estimados perdidos',
+      Metrica: 'Frames estimados perdidos',
       Valor: report.droppedFrames,
-      Interpretação: 'Estimativa baseada no orçamento de 16.67 ms por frame',
+      Interpretacao: 'Estimativa baseada no orcamento de 16.67 ms por frame',
     },
     {
-      Métrica: 'Taxa de jank',
+      Metrica: 'Taxa de jank',
       Valor: `${report.jankRatePercent}%`,
-      Interpretação: report.jankRatePercent <= 3 ? 'Baixa' : 'Revisar telas com maior carga',
+      Interpretacao: report.jankRatePercent <= 3 ? 'Baixa' : 'Revisar telas com maior carga',
     },
   ]);
 
-  console.log('2. Renderização por componente');
+  console.log('2. Renderizacao por componente');
   const renderRows = Object.entries(report.componentRenderTimes)
     .map(([name, stats]) => ({
       Componente: name,
       Renders: stats.count,
-      'Médio (ms)': stats.average,
+      'Medio (ms)': stats.average,
       'Mediana (ms)': stats.median,
       'P95 (ms)': stats.p95,
-      'Máximo (ms)': stats.max,
+      'Maximo (ms)': stats.max,
       'Renders > 16ms': stats.slowRenderCount,
-      'Intervalo médio': stats.averageIntervalMs === null ? '-' : `${stats.averageIntervalMs} ms`,
-      Diagnóstico: getComponentDiagnosis(stats),
+      'Intervalo medio': stats.averageIntervalMs === null ? '-' : `${stats.averageIntervalMs} ms`,
+      Diagnostico: getComponentDiagnosis(stats),
     }))
     .sort((a, b) => b['P95 (ms)'] - a['P95 (ms)']);
 
   if (renderRows.length > 0) {
     console.table(renderRows);
   } else {
-    console.log('Nenhuma métrica de renderização por componente foi coletada.');
+    console.log('Nenhuma metrica de renderizacao por componente foi coletada.');
   }
 
-  console.log('3. Memória JS');
+  console.log('3. Memoria JS');
   console.table([
     {
-      Métrica: 'Disponibilidade',
-      Valor: report.memoryAvailable ? 'Disponível' : 'Indisponível',
+      Metrica: 'Disponibilidade',
+      Valor: report.memoryAvailable ? 'Disponivel' : 'Indisponivel',
       Detalhe: report.memorySource,
     },
     {
-      Métrica: 'Heap inicial',
+      Metrica: 'Heap inicial',
       Valor: report.memoryAvailable ? `${report.initialJSHeapMB} MB` : '-',
       Detalhe: 'Primeira amostra da sessão',
     },
     {
-      Métrica: 'Heap final',
+      Metrica: 'Heap final',
       Valor: report.memoryAvailable ? `${report.finalJSHeapMB} MB` : '-',
-      Detalhe: 'Última amostra da sessão',
+      Detalhe: 'Ultima amostra da sessao',
     },
     {
-      Métrica: 'Heap médio',
+      Metrica: 'Heap medio',
       Valor: report.memoryAvailable ? `${report.averageJSHeapMB} MB` : '-',
-      Detalhe: 'Média das amostras disponíveis',
+      Detalhe: 'Media das amostras disponiveis',
     },
     {
-      Métrica: 'Pico de heap',
+      Metrica: 'Pico de heap',
       Valor: report.memoryAvailable ? `${report.peakJSHeapMB} MB` : '-',
       Detalhe: memoryStatus,
     },
     {
-      Métrica: 'Variação do heap',
+      Metrica: 'Variacao do heap',
       Valor: report.memoryAvailable ? `${report.heapDeltaMB} MB` : '-',
-      Detalhe: report.heapDeltaMB > 5 ? 'Crescimento relevante durante a sessão' : 'Sem crescimento relevante',
+      Detalhe: report.heapDeltaMB > 5 ? 'Crescimento relevante durante a sessao' : 'Sem crescimento relevante',
     },
   ]);
 
-  console.log('4. Leitura técnica');
+  console.log('4. Leitura tecnica');
   console.table([
     {
-      Área: 'FPS',
+      Area: 'FPS',
       Resultado: fpsStatus,
-      Observação: 'Amostrado continuamente com requestAnimationFrame em janelas de aproximadamente 1 segundo.',
+      Observacao: 'Amostrado continuamente com requestAnimationFrame em janelas de aproximadamente 1 segundo.',
     },
     {
-      Área: 'Render',
+      Area: 'Render',
       Resultado: renderStatus,
-      Observação: 'Mede o tempo entre início do render funcional e commit do useEffect por componente instrumentado.',
+      Observacao: 'Mede o tempo entre inicio do render funcional e commit do useEffect por componente instrumentado.',
     },
     {
-      Área: 'Memória',
+      Area: 'Memoria',
       Resultado: memoryStatus,
-      Observação: report.memoryAvailable
-        ? 'Dados extraídos de performance.memory.'
-        : 'React Native pode não expor heap JS no runtime nativo; o relatório registra essa limitação explicitamente.',
+      Observacao: report.memoryAvailable
+        ? 'Dados extraidos de performance.memory.'
+        : 'React Native pode nao expor heap JS no runtime nativo; o relatorio registra essa limitacao explicitamente.',
     },
   ]);
 
@@ -387,16 +435,37 @@ function buildComponentRenderReport(
   );
 }
 
-function getFPSStatus(averageFPS: number, jankRatePercent: number): string {
-  if (averageFPS >= 55 && jankRatePercent <= 3) {
+function getFPSStatus(report: PerformanceReport): string {
+  if (
+    report.averageFPS >= 55 &&
+    report.jankRatePercent <= 3 &&
+    report.fpsP95FrameTimeMs <= 33 &&
+    report.worstFrameTimeMs <= 120
+  ) {
     return 'Excelente';
   }
 
-  if (averageFPS >= 45 && jankRatePercent <= 8) {
-    return 'Bom com atenção';
+  if (
+    report.averageFPS >= 50 &&
+    report.jankRatePercent <= 5 &&
+    report.fpsP95FrameTimeMs <= 50
+  ) {
+    return 'Bom com atencao';
   }
 
-  return 'Precisa de otimização';
+  if (report.averageFPS >= 45 && report.jankRatePercent <= 8) {
+    return 'Regular: houve travadas pontuais';
+  }
+
+  return 'Precisa de otimizacao';
+}
+
+function getRefreshRateNote(averageFPS: number): string {
+  if (averageFPS > 75) {
+    return 'Runtime provavelmente executando em tela de alta taxa de atualizacao (90/120 Hz).';
+  }
+
+  return 'Runtime provavelmente executando proximo ao alvo tradicional de 60 FPS.';
 }
 
 function getRenderStatus(componentRenderTimes: Record<string, ComponentRenderReport>): string {
@@ -414,7 +483,7 @@ function getRenderStatus(componentRenderTimes: Record<string, ComponentRenderRep
   }
 
   if (worstP95 <= 32) {
-    return 'Bom com pontos de atenção';
+    return 'Bom com pontos de atencao';
   }
 
   return 'Revisar componentes mais caros';
@@ -422,7 +491,7 @@ function getRenderStatus(componentRenderTimes: Record<string, ComponentRenderRep
 
 function getMemoryStatus(report: PerformanceReport): string {
   if (!report.memoryAvailable) {
-    return 'Indisponível neste runtime';
+    return 'Indisponivel neste runtime';
   }
 
   if (report.heapDeltaMB > 10) {
@@ -433,19 +502,19 @@ function getMemoryStatus(report: PerformanceReport): string {
     return 'Crescimento moderado de heap';
   }
 
-  return 'Estável';
+  return 'Estavel';
 }
 
 function getComponentDiagnosis(stats: ComponentRenderReport): string {
   if (stats.p95 > 32 || stats.slowRenderCount >= 3) {
-    return 'Prioridade de otimização';
+    return 'Prioridade de otimizacao';
   }
 
   if (stats.p95 > SLOW_RENDER_MS || stats.slowRenderCount > 0) {
     return 'Monitorar';
   }
 
-  return 'Saudável';
+  return 'Saudavel';
 }
 
 function average(values: number[], precision: number): number {

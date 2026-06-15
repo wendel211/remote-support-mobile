@@ -1,0 +1,43 @@
+module.exports = {
+  preset: 'jest-expo',
+  testEnvironment: 'node',
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
+  moduleNameMapper: {
+    '^@app/(.*)$': '<rootDir>/src/app/$1',
+    '^@features/(.*)$': '<rootDir>/src/features/$1',
+    '^@navigation/(.*)$': '<rootDir>/src/navigation/$1',
+    '^@services/(.*)$': '<rootDir>/src/services/$1',
+    '^@shared/(.*)$': '<rootDir>/src/shared/$1',
+    '^@store/(.*)$': '<rootDir>/src/store/$1',
+    '^@test/(.*)$': '<rootDir>/src/test/$1',
+  },
+  transformIgnorePatterns: [
+    'node_modules/(?!(jest-)?react-native|@react-native|@react-navigation|expo(nent)?|@expo(nent)?/.*|react-native-reanimated|react-native-safe-area-context|nativewind)',
+  ],
+  collectCoverageFrom: [
+    'src/**/*.{ts,tsx}',
+    '!src/**/*.d.ts',
+    '!src/**/index.ts',
+    '!src/**/types.ts',
+    '!src/services/firebase/config.ts',
+    '!src/navigation/**',
+    '!src/app/providers/**',
+    '!src/features/**/screens/**',
+    '!src/features/**/hooks/**',
+    '!src/features/chat/components/ChatScreen.tsx',
+    '!src/features/commands/store/hooks.ts',
+    '!src/features/screenshot/services/config.ts',
+    '!src/shared/ui/**',
+    '!src/store/**',
+    '!src/test/**',
+    '!src/shared/ui/gluestack-ui-provider/**',
+  ],
+  coverageThreshold: {
+    global: {
+      branches: 90,
+      functions: 90,
+      lines: 90,
+      statements: 90,
+    },
+  },
+};

@@ -1,26 +1,33 @@
 module.exports = function (api) {
-  api.cache(true);
+  const isTest = api.env('test');
+
+  const plugins = [
+    [
+      'module-resolver',
+      {
+        root: ['.'],
+        alias: {
+          '@app': './src/app',
+          '@features': './src/features',
+          '@navigation': './src/navigation',
+          '@services': './src/services',
+          '@shared': './src/shared',
+          '@store': './src/store',
+          '@test': './src/test',
+        },
+      },
+    ],
+  ];
+
+  if (!isTest) {
+    plugins.push('react-native-reanimated/plugin');
+  }
+
   return {
     presets: [
       ['babel-preset-expo', { jsxImportSource: 'nativewind' }],
-      'nativewind/babel',
+      ...(!isTest ? ['nativewind/babel'] : []),
     ],
-    plugins: [
-      [
-        'module-resolver',
-        {
-          root: ['.'],
-          alias: {
-            '@app': './src/app',
-            '@features': './src/features',
-            '@navigation': './src/navigation',
-            '@services': './src/services',
-            '@shared': './src/shared',
-            '@store': './src/store',
-          },
-        },
-      ],
-      'react-native-reanimated/plugin',
-    ],
+    plugins,
   };
 };

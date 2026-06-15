@@ -28,7 +28,7 @@ import {
 import { clearMessages } from '@features/chat/store';
 import { sendMessage } from '@features/chat';
 import type { Session } from '@features/session/types';
-import { StatusBadge } from '@shared/components';
+import { NetworkStatusBanner, StatusBadge } from '@shared/components';
 import { ChatScreen } from '@features/chat/components';
 import { useScreenshotCapture, clearScreenshot } from '@features/screenshot';
 import {
@@ -359,12 +359,10 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
               <StatusBadge status="connected" />
             </HStack>
 
-            <HStack className="justify-center rounded-xl py-2" style={{ backgroundColor: colors.successSoft }} space="sm">
-              <ConnectedIcon />
-              <Text className="text-[12px] leading-4" style={{ color: colors.success }} weight="semibold">
-                Sessão ativa e sincronizada
-              </Text>
-            </HStack>
+            <NetworkStatusBanner
+              onlineLabel="Sessão ativa e sincronizada"
+              offlineLabel="Sessão não sincronizada"
+            />
           </VStack>
 
           {isSending && (
@@ -523,7 +521,11 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
           ],
         }}
       >
-        <VStack className="flex-1 justify-center" space="xl">
+        <VStack className="flex-1" space="xl">
+          <BrandHeader />
+          <NetworkStatusBanner hideWhenOnline offlineLabel="Sem conexão com a internet" />
+
+          <VStack className="flex-1 justify-center" space="xl">
           <VStack className="items-center" space="md">
             <Box className="h-16 w-16 items-center justify-center rounded-2xl" style={{ backgroundColor: colors.surfaceElevated }}>
               <ClientIcon large />
@@ -618,6 +620,7 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
               </VStack>
             </Box>
           </Animated.View>
+          </VStack>
         </VStack>
       </Animated.View>
 
@@ -710,12 +713,15 @@ function ClientIcon({ large = false }: { large?: boolean }): React.JSX.Element {
   );
 }
 
-function ConnectedIcon(): React.JSX.Element {
+function BrandHeader(): React.JSX.Element {
+  const { colors } = useTheme();
+
   return (
-    <Box className="h-[14px] w-[14px] items-center justify-center rounded-full bg-[#059669]">
-      <Text className="text-[9px] leading-[11px] text-white" weight="bold">
-        OK
+    <HStack className="items-center justify-center" space="xs">
+      <MaterialCommunityIcons name="headset" size={20} color={colors.accent} />
+      <Text className="text-[19px] leading-[23px]" style={{ color: colors.text }} weight="bold">
+        Remote Support
       </Text>
-    </Box>
+    </HStack>
   );
 }

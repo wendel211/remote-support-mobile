@@ -33,7 +33,7 @@ import {
 import { clearMessages } from '@features/chat/store';
 import { sendMessage } from '@features/chat';
 import type { Session, SessionStatus } from '@features/session/types';
-import { StatusBadge } from '@shared/components';
+import { NetworkStatusBanner, StatusBadge } from '@shared/components';
 import { ChatScreen } from '@features/chat/components';
 import {
   requestScreenshot,
@@ -320,10 +320,11 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
         currentStatusRef.current !== 'idle' &&
         currentStatusRef.current !== 'ended'
       ) {
+        finishPerformanceReport();
         void endSession(sessionCodeRef.current);
       }
     };
-  }, [initSession]);
+  }, [finishPerformanceReport, initSession]);
 
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(
@@ -478,6 +479,7 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         className="flex-1"
+        style={{ flex: 1 }}
       >
         <Box className="flex-1" style={{ backgroundColor: colors.bg }}>
           <StatusBar style={isDark ? 'light' : 'dark'} />
@@ -571,6 +573,10 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
                   />
                 </HStack>
               </Box>
+              <NetworkStatusBanner
+                onlineLabel="Sessão ativa e sincronizada"
+                offlineLabel="Sessão não sincronizada"
+              />
             </VStack>
 
             {activeTab === 'controls' ? (
@@ -725,9 +731,7 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
                 </VStack>
               </ScrollView>
             ) : (
-              <Box className="flex-1">
-                <ChatScreen sessionCode={sessionCode} currentRole="attendant" />
-              </Box>
+              <ChatScreen sessionCode={sessionCode} currentRole="attendant" />
             )}
 
             {activeTab === 'controls' && !isKeyboardVisible && (
@@ -787,7 +791,11 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
           ],
         }}
       >
-        <VStack className="flex-1 justify-center" space="xl">
+        <VStack className="flex-1" space="xl">
+          <BrandHeader />
+          <NetworkStatusBanner hideWhenOnline offlineLabel="Sem conexão com a internet" />
+
+          <VStack className="flex-1 justify-center" space="xl">
           <VStack className="items-center" space="md">
             <Box className="h-16 w-16 items-center justify-center rounded-2xl" style={{ backgroundColor: colors.surfaceElevated }}>
               <AttendantIcon large />
@@ -927,6 +935,7 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
               <ButtonText tone="danger">Encerrar sessão</ButtonText>
             </Button>
           </VStack>
+          </VStack>
         </VStack>
       </Animated.View>
     </Box>
@@ -995,5 +1004,18 @@ function AttendantIcon({ large = false, size }: { large?: boolean; size?: number
   const { colors } = useTheme();
   return (
     <MaterialCommunityIcons name="tools" size={size ?? (large ? 36 : 22)} color={colors.iconDefault} />
+  );
+}
+
+function BrandHeader(): React.JSX.Element {
+  const { colors } = useTheme();
+
+  return (
+    <HStack className="items-center justify-center" space="xs">
+      <MaterialCommunityIcons name="headset" size={20} color={colors.accent} />
+      <Text className="text-[19px] leading-[23px]" style={{ color: colors.text }} weight="bold">
+        Remote Support
+      </Text>
+    </HStack>
   );
 }
