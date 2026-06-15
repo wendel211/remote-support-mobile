@@ -8,6 +8,7 @@ import {
   Modal,
   Platform,
 } from 'react-native';
+import { useNetInfo } from '@react-native-community/netinfo';
 import { StatusBar } from 'expo-status-bar';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -55,6 +56,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Client'>;
 export function ClientScreen({ navigation }: Props): React.JSX.Element {
   const dispatch = useAppDispatch();
   const insets = useSafeAreaInsets();
+  const netInfo = useNetInfo();
   const { isDark, colors } = useTheme();
   const error = useAppSelector((state) => state.session.error);
   const [code, setCode] = useState('');
@@ -75,6 +77,8 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
     (state) => state.commands.pendingCommand,
   );
   const { viewRef, isSending } = useScreenshotCapture(connectedCode);
+  const isOffline =
+    netInfo.isConnected === false || netInfo.isInternetReachable === false;
 
   useEffect(() => {
     isConnectedRef.current = isConnected;
@@ -166,8 +170,7 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
         (updatedSession: Session | null) => {
           if (
             !updatedSession ||
-            updatedSession.status === 'ended' ||
-            updatedSession.attendantConnected === false
+            updatedSession.status === 'ended'
           ) {
             if (unsubscribeRef.current) {
               unsubscribeRef.current();
@@ -197,9 +200,6 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
     return () => {
       if (unsubscribeRef.current) {
         unsubscribeRef.current();
-      }
-      if (isConnectedRef.current && connectedCodeRef.current) {
-        void endSession(connectedCodeRef.current);
       }
     };
   }, []);
@@ -356,13 +356,24 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
                   </Text>
                 </VStack>
               </HStack>
-              <StatusBadge status="connected" />
+              <StatusBadge status={isOffline ? 'offline' : 'connected'} />
             </HStack>
 
-            <NetworkStatusBanner
-              onlineLabel="Sessão ativa e sincronizada"
-              offlineLabel="Sessão não sincronizada"
-            />
+            <HStack
+              className="justify-center rounded-xl py-2"
+              style={{
+                backgroundColor: isOffline ? colors.dangerSoft : colors.successSoft,
+              }}
+              space="sm"
+            >
+              <Text
+                className="text-[12px] leading-4"
+                style={{ color: isOffline ? colors.danger : colors.success }}
+                weight="semibold"
+              >
+                {isOffline ? 'Sessão não sincronizada' : 'Sessão ativa e sincronizada'}
+              </Text>
+            </HStack>
           </VStack>
 
           {isSending && (
@@ -411,7 +422,7 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
               className="px-4 pt-3"
               style={{
                 backgroundColor: colors.card,
-                paddingBottom: Math.max(insets.bottom, 28),
+                paddingBottom: Math.max(insets.bottom, 16),
                 borderTopWidth: 1,
                 borderTopColor: colors.separator,
               }}

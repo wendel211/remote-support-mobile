@@ -68,8 +68,6 @@ export async function registerAttendantPresence(code: string): Promise<void> {
     });
     await onDisconnect(sessionRef).update({
       attendantOnline: false,
-      attendantConnected: false,
-      status: 'ended',
     });
   } catch (err: unknown) {
     throw normalizeFirebaseError(err, 'Erro ao registrar a presença do atendente.');
@@ -104,8 +102,6 @@ export async function joinSession(code: string): Promise<Session> {
     });
     await onDisconnect(sessionRef).update({
       clientOnline: false,
-      clientConnected: false,
-      status: 'ended',
     });
   } catch (err: unknown) {
     throw normalizeFirebaseError(err, 'Erro ao entrar na sessão.');

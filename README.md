@@ -220,7 +220,7 @@ As features mantêm seus componentes, services, stores e tipos próximos. Códig
 - A tipografia do app usa Poppins nos textos, botões, badges, inputs e telas modais para manter consistência visual.
 - `react-native-view-shot` captura a superfície renderizada do app do Cliente para envio imediato ao Atendente. Em Expo, esta abordagem evita permissões nativas sensíveis para captura da tela inteira do sistema operacional.
 - WebView in-app evita abrir navegador externo durante o suporte.
-- A presença online/offline usa `onDisconnect` do Firebase para marcar quedas inesperadas de conexão e encerrar a sessão quando um perfil desconecta.
+- A presença online/offline usa `onDisconnect` do Firebase para marcar quedas inesperadas de conexão sem encerrar automaticamente a sessão.
 - O estado offline da interface usa `@react-native-community/netinfo` para indicar quando o dispositivo está sem internet e a sessão não está sincronizada.
 - Jest com React Native Testing Library cobre reducers, services, componentes de chat, comandos, captura, badges e relatório de performance.
 
@@ -257,4 +257,3 @@ Na última validação local:
 - Não há autenticação completa, conforme permitido pelo desafio.
 - Notificações locais em background não foram implementadas porque são requisito opcional.
 - O JS heap depende de suporte do runtime a `performance.memory`; quando indisponível, o relatório informa essa limitação.
-

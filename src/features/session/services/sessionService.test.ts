@@ -81,7 +81,7 @@ describe('sessionService', () => {
     await expect(endSession('ABC123')).rejects.toThrow('encerrar');
   });
 
-  it('registers attendant presence and onDisconnect cleanup', async () => {
+  it('registers attendant presence and marks offline on disconnect without ending the session', async () => {
     await registerAttendantPresence('ABC123');
 
     expect(mockUpdate).toHaveBeenCalledWith(expect.anything(), {
@@ -90,8 +90,6 @@ describe('sessionService', () => {
     });
     expect(mockOnDisconnectUpdate).toHaveBeenCalledWith({
       attendantOnline: false,
-      attendantConnected: false,
-      status: 'ended',
     });
   });
 
@@ -111,6 +109,9 @@ describe('sessionService', () => {
       clientConnected: true,
       clientOnline: true,
       status: 'connected',
+    });
+    expect(mockOnDisconnectUpdate).toHaveBeenCalledWith({
+      clientOnline: false,
     });
     expect(session).toEqual({
       status: 'connected',

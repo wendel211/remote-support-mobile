@@ -83,17 +83,17 @@ export function ChatInput({
 
   return (
     <HStack
-      className="items-end px-4 py-3"
+      className="items-center px-4 pt-2.5 pb-2"
       style={{
         backgroundColor: colors.surface,
         borderTopWidth: 1,
         borderColor: colors.separator,
-        paddingBottom: Math.max(insets.bottom, 28),
+        paddingBottom: Math.max(insets.bottom, 12),
       }}
       space="sm"
     >
       <Input
-        className="max-h-[96px] min-h-11 flex-1 rounded-ui"
+        className="max-h-[96px] min-h-12 flex-1 rounded-ui"
         value={text}
         onChangeText={handleChangeText}
         placeholder="Digite uma mensagem..."
@@ -104,10 +104,13 @@ export function ChatInput({
           backgroundColor: colors.inputBg,
           borderColor: colors.inputBorder,
           color: colors.inputText,
+          paddingTop: 10,
+          paddingBottom: 10,
+          textAlignVertical: 'center',
         }}
       />
       <Button
-        className="min-h-11 rounded-ui px-4"
+        className="h-12 min-h-12 self-center rounded-ui px-4"
         disabled={isSendDisabled}
         onPress={handleSend}
       >

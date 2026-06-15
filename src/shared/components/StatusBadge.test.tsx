@@ -11,9 +11,19 @@ describe('StatusBadge', () => {
     ['connected', 'Conectado'],
     ['ended', 'Encerrado'],
     ['idle', 'Inativo'],
+    ['offline', 'Offline'],
   ] as const)('renders label for %s status', async (status, label) => {
     const { getByText } = await renderWithProviders(<StatusBadge status={status} />);
     expect(getByText(label)).toBeTruthy();
+  });
+
+  it('renders a custom label when provided', async () => {
+    const { getByText, queryByText } = await renderWithProviders(
+      <StatusBadge status="offline" label="Aguardando conexão" />,
+    );
+
+    expect(getByText('Aguardando conexão')).toBeTruthy();
+    expect(queryByText('Offline')).toBeNull();
   });
 });
 

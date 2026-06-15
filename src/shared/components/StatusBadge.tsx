@@ -3,10 +3,11 @@ import type { SessionStatus } from '@features/session/types';
 import { Box, HStack, Text, useTheme } from '@shared/ui';
 
 interface StatusBadgeProps {
-  status: SessionStatus;
+  status: SessionStatus | 'offline';
+  label?: string;
 }
 
-export function StatusBadge({ status }: StatusBadgeProps): React.JSX.Element {
+export function StatusBadge({ status, label }: StatusBadgeProps): React.JSX.Element {
   const { isDark, colors } = useTheme();
 
   const getStatusStyle = () => {
@@ -43,6 +44,14 @@ export function StatusBadge({ status }: StatusBadgeProps): React.JSX.Element {
           borderColor: colors.dangerBorder,
           label: 'Encerrado',
         };
+      case 'offline':
+        return {
+          dotColor: colors.danger,
+          textColor: colors.danger,
+          bgColor: colors.dangerSoft,
+          borderColor: colors.dangerBorder,
+          label: 'Offline',
+        };
     }
   };
 
@@ -67,7 +76,7 @@ export function StatusBadge({ status }: StatusBadgeProps): React.JSX.Element {
         size="xs"
         weight="semibold"
       >
-        {config.label}
+        {label ?? config.label}
       </Text>
     </HStack>
   );

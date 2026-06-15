@@ -10,6 +10,7 @@ import {
   ScrollView,
   useWindowDimensions,
 } from 'react-native';
+import { useNetInfo } from '@react-native-community/netinfo';
 import { StatusBar } from 'expo-status-bar';
 import * as Clipboard from 'expo-clipboard';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -63,6 +64,7 @@ type AttendantTab = 'controls' | 'chat';
 export function AttendantScreen({ navigation }: Props): React.JSX.Element {
   const dispatch = useAppDispatch();
   const insets = useSafeAreaInsets();
+  const netInfo = useNetInfo();
   const { width } = useWindowDimensions();
   const { isDark, colors } = useTheme();
   const [isLoading, setIsLoading] = useState(true);
@@ -91,11 +93,16 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
   const lastScreenshot = useAppSelector(
     (state) => state.screenshot.lastScreenshot,
   );
+  const currentSession = useAppSelector((state) => state.session.session);
   const isSending = useAppSelector((state) => state.screenshot.isSending);
   const screenshotError = useAppSelector((state) => state.screenshot.error);
   const clientMessageCount = useAppSelector(
     (state) => state.chat.messages.filter((message) => message.role === 'client').length,
   );
+  const isOffline =
+    netInfo.isConnected === false || netInfo.isInternetReachable === false;
+  const isWaitingForConnection =
+    isOffline || (currentStatus === 'connected' && currentSession?.clientOnline === false);
 
   const tabContainerWidth = Math.max(width - 32, 280);
   const tabIndicatorWidth = (tabContainerWidth - 8) / 2;
@@ -524,7 +531,10 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
                     </Text>
                   </VStack>
                 </HStack>
-                <StatusBadge status={currentStatus} />
+                <StatusBadge
+                  status={isWaitingForConnection ? 'waiting' : currentStatus}
+                  label={isWaitingForConnection ? 'Aguardando conexão' : undefined}
+                />
               </HStack>
 
               <Box
@@ -573,10 +583,6 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
                   />
                 </HStack>
               </Box>
-              <NetworkStatusBanner
-                onlineLabel="Sessão ativa e sincronizada"
-                offlineLabel="Sessão não sincronizada"
-              />
             </VStack>
 
             {activeTab === 'controls' ? (
