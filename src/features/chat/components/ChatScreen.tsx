@@ -1,7 +1,7 @@
 import React, { useEffect, useCallback, useMemo, useRef } from 'react';
 import { FlatList, View } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { Box, HStack, Text, VStack } from '@shared/ui';
+import { Box, HStack, Text, VStack, useTheme } from '@shared/ui';
 import { useAppDispatch, useAppSelector } from '@store/hooks';
 import {
   sendMessage,
@@ -19,6 +19,7 @@ import type { ChatMessage, MessageRole } from '../types';
 import { ChatBubble } from './ChatBubble';
 import { TypingIndicator } from './TypingIndicator';
 import { ChatInput } from './ChatInput';
+import { useRenderMetric } from '@features/performance';
 
 interface ChatScreenProps {
   sessionCode: string;
@@ -30,10 +31,12 @@ export function ChatScreen({
   currentRole,
 }: ChatScreenProps): React.JSX.Element {
   const dispatch = useAppDispatch();
+  useRenderMetric(`ChatScreen:${currentRole}`);
   const messages = useAppSelector((state) => state.chat.messages);
   const isTyping = useAppSelector((state) => state.chat.isTyping);
   const pendingRequest = useAppSelector((state) => state.screenshot.pendingRequest);
   const listRef = useRef<FlatList<ChatMessage>>(null);
+  const { isDark, colors } = useTheme();
 
   const oppositeRole: MessageRole =
     currentRole === 'attendant' ? 'client' : 'attendant';
@@ -124,7 +127,7 @@ export function ChatScreen({
   const keyExtractor = useCallback((item: ChatMessage) => item.id, []);
 
   return (
-    <View className="flex-1 bg-background">
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <FlatList
         ref={listRef}
         className="flex-1"
@@ -148,16 +151,35 @@ export function ChatScreen({
               !pendingRequest.sentAt &&
               !pendingRequest.base64 &&
               !pendingRequest.error && (
-                <Box className="rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] p-4 shadow-sm">
+                <Box
+                  className="rounded-2xl p-4 shadow-sm"
+                  style={{
+                    backgroundColor: isDark ? colors.surfaceElevated : '#F8FAFC',
+                    borderWidth: 1,
+                    borderColor: colors.cardBorder,
+                  }}
+                >
                   <HStack space="md" className="items-center">
-                    <Box className="h-10 w-10 items-center justify-center rounded-full bg-blue-50">
-                      <MaterialCommunityIcons name="camera" size={20} color="#2563EB" />
+                    <Box
+                      className="h-10 w-10 items-center justify-center rounded-full"
+                      style={{
+                        backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : '#EFF6FF',
+                      }}
+                    >
+                      <MaterialCommunityIcons name="camera" size={20} color={colors.accent} />
                     </Box>
                     <VStack space="xs" className="flex-1">
-                      <Text className="text-[15px] text-[#0F172A]" weight="bold">
+                      <Text
+                        className="text-[15px]"
+                        style={{ color: colors.text }}
+                        weight="bold"
+                      >
                         Captura solicitada
                       </Text>
-                      <Text className="text-[13px] text-[#64748B]">
+                      <Text
+                        className="text-[13px]"
+                        style={{ color: colors.textSecondary }}
+                      >
                         {currentRole === 'client'
                           ? 'Enviando automaticamente uma captura da tela do app.'
                           : 'Aguardando envio da captura pelo cliente...'}

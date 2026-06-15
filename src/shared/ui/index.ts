@@ -1,4 +1,4 @@
-export { ThemeProvider, useTheme } from './ThemeContext';
+export { ThemeProvider, useTheme, type ThemeColors } from './ThemeContext';
 export { Box, type BoxProps } from './box';
 export { HStack, type HStackProps } from './hstack';
 export { VStack, type VStackProps } from './vstack';

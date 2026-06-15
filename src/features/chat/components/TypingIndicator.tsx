@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated } from 'react-native';
-import { Box, Text } from '@shared/ui';
+import { Box, Text, useTheme } from '@shared/ui';
+import { useRenderMetric } from '@features/performance';
 import type { MessageRole } from '../types';
 
 interface TypingIndicatorProps {
@@ -18,7 +19,9 @@ export function TypingIndicator({
   visible,
   role,
 }: TypingIndicatorProps): React.JSX.Element | null {
+  useRenderMetric(`TypingIndicator:${role}`);
   const opacity = useRef(new Animated.Value(1)).current;
+  const { colors } = useTheme();
 
   useEffect(() => {
     if (visible) {
@@ -54,7 +57,7 @@ export function TypingIndicator({
   return (
     <Animated.View style={{ opacity }}>
       <Box className="px-4 py-1.5">
-        <Text className="italic" size="sm" tone="muted">
+        <Text className="italic" size="sm" style={{ color: colors.textSecondary }}>
           {ROLE_LABELS[role]}
         </Text>
       </Box>

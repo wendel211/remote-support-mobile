@@ -11,13 +11,13 @@ type Props = NativeStackScreenProps<RootStackParamList, 'RoleSelection'>;
 
 export function RoleSelectionScreen({ navigation }: Props): React.JSX.Element {
   const insets = useSafeAreaInsets();
-  const { isDark, toggleTheme } = useTheme();
+  const { isDark, toggleTheme, colors } = useTheme();
 
   return (
     <Box
       className="flex-1 px-7"
       style={{
-        backgroundColor: isDark ? '#090D16' : '#F3F4F6',
+        backgroundColor: colors.bg,
         paddingTop: Math.max(insets.top, 24) + 16,
         paddingBottom: Math.max(insets.bottom, 20),
       }}
@@ -29,7 +29,7 @@ export function RoleSelectionScreen({ navigation }: Props): React.JSX.Element {
 
           <HStack className="items-center justify-center flex-1" space="xs">
             <HeadsetIcon />
-            <Text className="text-[19px] leading-[23px]" style={{ color: isDark ? '#FFFFFF' : '#111827' }} weight="bold">
+            <Text className="text-[19px] leading-[23px]" style={{ color: colors.text }} weight="bold">
               Remote Support
             </Text>
           </HStack>
@@ -37,31 +37,31 @@ export function RoleSelectionScreen({ navigation }: Props): React.JSX.Element {
           <Pressable
             onPress={toggleTheme}
             className="w-9 h-9 items-center justify-center rounded-full"
-            style={{ backgroundColor: isDark ? '#1E293B' : '#E5E7EB' }}
+            style={{ backgroundColor: colors.surfaceElevated }}
           >
             <MaterialCommunityIcons
               name={isDark ? 'weather-sunny' : 'weather-night'}
               size={20}
-              color={isDark ? '#F59E0B' : '#475569'}
+              color={isDark ? '#F59E0B' : colors.iconDefault}
             />
           </Pressable>
         </HStack>
 
         <VStack className="mt-10" space="lg">
           <HStack space="sm">
-            <Box className="rounded-md px-2.5 py-1.5" style={{ backgroundColor: isDark ? '#1E293B' : '#EAF2FF' }}>
+            <Box className="rounded-md px-2.5 py-1.5" style={{ backgroundColor: colors.accentSoft }}>
               <HStack className="items-center" space="xs">
                 <RemoteBadgeIcon />
-                <Text className="text-[11px] leading-3" style={{ color: isDark ? '#60A5FA' : '#2563EB' }} weight="medium">
+                <Text className="text-[11px] leading-3" style={{ color: colors.accent }} weight="medium">
                   Suporte remoto
                 </Text>
               </HStack>
             </Box>
 
-            <Box className="rounded-md px-2.5 py-1.5" style={{ backgroundColor: isDark ? '#064E3B' : '#DFF8ED' }}>
+            <Box className="rounded-md px-2.5 py-1.5" style={{ backgroundColor: colors.successSoft }}>
               <HStack className="items-center" space="xs">
                 <RealtimeBadgeIcon />
-                <Text className="text-[11px] leading-3" style={{ color: isDark ? '#34D399' : '#059669' }} weight="medium">
+                <Text className="text-[11px] leading-3" style={{ color: colors.success }} weight="medium">
                   Tempo real
                 </Text>
               </HStack>
@@ -69,10 +69,10 @@ export function RoleSelectionScreen({ navigation }: Props): React.JSX.Element {
           </HStack>
 
           <VStack space="sm">
-            <Text className="text-[25px] leading-[29px]" style={{ color: isDark ? '#FFFFFF' : '#111827' }} weight="bold">
+            <Text className="text-[25px] leading-[29px]" style={{ color: colors.text }} weight="bold">
               Escolha o seu perfil
             </Text>
-            <Text className="max-w-[260px] text-[13px] leading-[20px]" style={{ color: isDark ? '#94A3B8' : '#64748B' }}>
+            <Text className="max-w-[260px] text-[13px] leading-[20px]" style={{ color: colors.textSecondary }}>
               Conecte sendo atendente ou cliente em uma sessão segura com chat,
               captura de tela e comandos remotos.
             </Text>
@@ -97,8 +97,8 @@ export function RoleSelectionScreen({ navigation }: Props): React.JSX.Element {
 
         <HStack className="mt-auto items-start px-3 pb-1" space="sm">
           <InfoIcon />
-          <Text className="flex-1 text-[10px] leading-[15px]" style={{ color: isDark ? '#94A3B8' : '#64748B' }}>
-            <Text className="text-[10px]" style={{ color: isDark ? '#CBD5E1' : '#475569' }} weight="bold">
+          <Text className="flex-1 text-[10px] leading-[15px]" style={{ color: colors.textSecondary }}>
+            <Text className="text-[10px]" style={{ color: colors.text }} weight="bold">
               Como funciona:
             </Text>{' '}
             O atendente inicia uma sessão e compartilha um código seguro. O
@@ -124,7 +124,7 @@ function RoleCard({
   description,
   onPress,
 }: RoleCardProps): React.JSX.Element {
-  const { isDark } = useTheme();
+  const { colors } = useTheme();
   return (
     <Pressable onPress={onPress}>
       {({ pressed }) => (
@@ -132,19 +132,19 @@ function RoleCard({
           className={`min-h-[96px] items-center rounded-xl border px-5 py-4 shadow-sm ${pressed ? 'opacity-85' : 'opacity-100'
             }`}
           style={{
-            backgroundColor: isDark ? '#090D16' : '#FFFFFF',
-            borderColor: isDark ? '#24334A' : '#E5E7EB',
+            backgroundColor: colors.card,
+            borderColor: colors.cardBorder,
             transform: [{ scale: pressed ? 0.98 : 1 }]
           }}
         >
-          <Box className="mr-4 h-12 w-12 items-center justify-center rounded-lg" style={{ backgroundColor: isDark ? '#1E293B' : '#F1F5F9' }}>
+          <Box className="mr-4 h-12 w-12 items-center justify-center rounded-lg" style={{ backgroundColor: colors.surfaceElevated }}>
             {icon}
           </Box>
           <VStack className="flex-1" space="xs">
-            <Text className="text-[16px] leading-[20px]" style={{ color: isDark ? '#FFFFFF' : '#111827' }} weight="bold">
+            <Text className="text-[16px] leading-[20px]" style={{ color: colors.text }} weight="bold">
               {title}
             </Text>
-            <Text className="max-w-[180px] text-[11px] leading-[15px]" style={{ color: isDark ? '#94A3B8' : '#64748B' }}>
+            <Text className="max-w-[180px] text-[11px] leading-[15px]" style={{ color: colors.textSecondary }}>
               {description}
             </Text>
           </VStack>
@@ -156,8 +156,8 @@ function RoleCard({
 }
 
 function HeadsetIcon(): React.JSX.Element {
-  const { isDark } = useTheme();
-  const color = isDark ? '#3B82F6' : '#2563EB';
+  const { colors } = useTheme();
+  const color = colors.accent;
   return (
     <Box className="h-[18px] w-[18px]">
       <Box className="absolute left-[3px] top-[2px] h-[12px] w-[12px] rounded-t-full border-2 border-b-0" style={{ borderColor: color }} />
@@ -169,8 +169,8 @@ function HeadsetIcon(): React.JSX.Element {
 }
 
 function RemoteBadgeIcon(): React.JSX.Element {
-  const { isDark } = useTheme();
-  const color = isDark ? '#60A5FA' : '#2563EB';
+  const { colors } = useTheme();
+  const color = colors.accent;
   return (
     <Box className="h-[10px] w-[10px] rounded-full border" style={{ borderColor: color }}>
       <Box className="absolute left-[3px] top-[3px] h-[4px] w-[4px] rounded-full" style={{ backgroundColor: color }} />
@@ -179,8 +179,8 @@ function RemoteBadgeIcon(): React.JSX.Element {
 }
 
 function RealtimeBadgeIcon(): React.JSX.Element {
-  const { isDark } = useTheme();
-  const color = isDark ? '#34D399' : '#059669';
+  const { colors } = useTheme();
+  const color = colors.success;
   return (
     <Box className="h-[11px] w-[8px]">
       <Box
@@ -196,15 +196,15 @@ function RealtimeBadgeIcon(): React.JSX.Element {
 }
 
 function AttendantIcon(): React.JSX.Element {
-  const { isDark } = useTheme();
+  const { colors } = useTheme();
   return (
-    <MaterialCommunityIcons name="tools" size={27} color={isDark ? '#94A3B8' : '#475569'} />
+    <MaterialCommunityIcons name="tools" size={27} color={colors.textSecondary} />
   );
 }
 
 function ClientIcon(): React.JSX.Element {
-  const { isDark } = useTheme();
-  const color = isDark ? '#94A3B8' : '#374151';
+  const { colors } = useTheme();
+  const color = colors.textSecondary;
   return (
     <Box className="h-7 w-7 items-center">
       <Box className="mt-[5px] h-[9px] w-[9px] rounded-full" style={{ backgroundColor: color }} />
@@ -214,9 +214,9 @@ function ClientIcon(): React.JSX.Element {
 }
 
 function InfoIcon(): React.JSX.Element {
-  const { isDark } = useTheme();
+  const { colors } = useTheme();
   return (
-    <Box className="mt-[1px] h-[14px] w-[14px] items-center justify-center rounded-full" style={{ backgroundColor: isDark ? '#475569' : '#64748B' }}>
+    <Box className="mt-[1px] h-[14px] w-[14px] items-center justify-center rounded-full" style={{ backgroundColor: colors.iconDefault }}>
       <Text className="text-[9px] leading-[11px] text-white" weight="bold">
         i
       </Text>
@@ -225,8 +225,8 @@ function InfoIcon(): React.JSX.Element {
 }
 
 function ChevronIcon(): React.JSX.Element {
-  const { isDark } = useTheme();
-  const color = isDark ? '#475569' : '#CBD5E1';
+  const { colors } = useTheme();
+  const color = colors.iconMuted;
   return (
     <Box className="h-[16px] w-[9px]">
       <Box

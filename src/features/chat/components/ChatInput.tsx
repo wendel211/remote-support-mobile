@@ -1,5 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Button, ButtonText, HStack, Input } from '@shared/ui';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Button, ButtonText, HStack, Input, useTheme } from '@shared/ui';
+import { useRenderMetric } from '@features/performance';
 
 interface ChatInputProps {
   onSend: (text: string) => void;
@@ -14,7 +16,10 @@ export function ChatInput({
   onTypingChange,
   disabled = false,
 }: ChatInputProps): React.JSX.Element {
+  useRenderMetric('ChatInput');
   const [text, setText] = useState('');
+  const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isTypingRef = useRef(false);
 
@@ -70,14 +75,29 @@ export function ChatInput({
   const isSendDisabled = text.trim().length === 0 || disabled;
 
   return (
-    <HStack className="items-end border-t border-border bg-surface px-4 py-3" space="sm">
+    <HStack
+      className="items-end px-4 py-3"
+      style={{
+        backgroundColor: colors.surface,
+        borderTopWidth: 1,
+        borderColor: colors.separator,
+        paddingBottom: Math.max(insets.bottom, 28),
+      }}
+      space="sm"
+    >
       <Input
-        className="max-h-[96px] min-h-11 flex-1 rounded-ui bg-slate-100"
+        className="max-h-[96px] min-h-11 flex-1 rounded-ui"
         value={text}
         onChangeText={handleChangeText}
         placeholder="Digite uma mensagem..."
+        placeholderTextColor={colors.placeholder}
         multiline
         editable={!disabled}
+        style={{
+          backgroundColor: colors.inputBg,
+          borderColor: colors.inputBorder,
+          color: colors.inputText,
+        }}
       />
       <Button
         className="min-h-11 rounded-ui px-4"

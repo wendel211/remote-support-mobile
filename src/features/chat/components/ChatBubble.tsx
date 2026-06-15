@@ -2,7 +2,8 @@ import { Pressable } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@navigation/types';
-import { Box, HStack, Text } from '@shared/ui';
+import { Box, HStack, Text, useTheme } from '@shared/ui';
+import { useRenderMetric } from '@features/performance';
 import type { ChatMessage, MessageRole } from '../types';
 
 interface ChatBubbleProps {
@@ -32,13 +33,26 @@ export function ChatBubble({
   message,
   currentRole,
 }: ChatBubbleProps) {
+  useRenderMetric(`ChatBubble:${message.role}`);
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { isDark, colors } = useTheme();
 
   if (message.role === 'system') {
     return (
       <Box className="my-2 items-center justify-center px-4">
-        <Box className="rounded-full bg-slate-100 border border-slate-200 px-3.5 py-1">
-          <Text className="text-center text-[12px] leading-4 text-slate-500" weight="semibold">
+        <Box
+          className="rounded-full px-3.5 py-1"
+          style={{
+            backgroundColor: isDark ? colors.surfaceElevated : '#F1F5F9',
+            borderWidth: 1,
+            borderColor: isDark ? colors.cardBorder : '#E2E8F0',
+          }}
+        >
+          <Text
+            className="text-center text-[12px] leading-4"
+            style={{ color: colors.textSecondary }}
+            weight="semibold"
+          >
             {message.text}
           </Text>
         </Box>
@@ -57,28 +71,47 @@ export function ChatBubble({
     }
   };
 
-  const bubbleClass = isOwn
-    ? 'self-end rounded-br-md bg-primary-600'
-    : 'self-start rounded-bl-md bg-slate-200';
-  const textClass = isOwn ? 'text-white' : 'text-foreground';
-  const metaClass = isOwn ? 'text-white/70' : 'text-slate-500';
+  const ownBubbleStyle = {
+    backgroundColor: '#244AE2',
+    alignSelf: 'flex-end' as const,
+    borderBottomRightRadius: 6,
+  };
+
+  const otherBubbleStyle = {
+    backgroundColor: isDark ? colors.surfaceElevated : '#E8EDF4',
+    alignSelf: 'flex-start' as const,
+    borderBottomLeftRadius: 6,
+  };
+
+  const bubbleStyle = isOwn ? ownBubbleStyle : otherBubbleStyle;
+  const textColor = isOwn ? '#FFFFFF' : colors.text;
+  const metaColor = isOwn ? 'rgba(255,255,255,0.65)' : colors.textTertiary;
 
   return (
     <Box className="px-3 py-1">
-      <Box className={`max-w-[82%] rounded-2xl px-3.5 py-2.5 ${bubbleClass}`}>
+      <Box
+        className="max-w-[82%] rounded-2xl px-3.5 py-2.5"
+        style={bubbleStyle}
+      >
         {isUrl ? (
           <Pressable className="items-start" onPress={handlePressUrl}>
-            <Text className={`underline ${textClass}`} size="sm">
+            <Text
+              className="underline text-[14px] leading-5"
+              style={{ color: textColor }}
+            >
               {message.text}
             </Text>
             <Box
-              className={`mt-2 rounded-ui px-3 py-1.5 ${
-                isOwn ? 'bg-white/20' : 'bg-primary-50'
-              }`}
+              className="mt-2 rounded-ui px-3 py-1.5"
+              style={{
+                backgroundColor: isOwn
+                  ? 'rgba(255,255,255,0.18)'
+                  : isDark ? 'rgba(59,130,246,0.15)' : '#EEF4FF',
+              }}
             >
               <Text
-                className={isOwn ? 'text-white' : 'text-primary-700'}
-                size="xs"
+                className="text-[12px]"
+                style={{ color: isOwn ? '#FFFFFF' : colors.accent }}
                 weight="semibold"
               >
                 Abrir link
@@ -86,19 +119,22 @@ export function ChatBubble({
             </Box>
           </Pressable>
         ) : (
-          <Text className={`leading-5 ${textClass}`} size="sm">
+          <Text
+            className="leading-5 text-[14px]"
+            style={{ color: textColor }}
+          >
             {message.text}
           </Text>
         )}
 
         <HStack className="mt-1" space="xs">
-          <Text className={metaClass} size="xs">
+          <Text className="text-[11px]" style={{ color: metaColor }}>
             {formatTime(message.timestamp)}
           </Text>
           {isOwn && (
             <Text
-              className={message.status === 'error' ? 'text-red-200' : metaClass}
-              size="xs"
+              className="text-[11px]"
+              style={{ color: message.status === 'error' ? '#FCA5A5' : metaColor }}
             >
               {getStatusIndicator(message.status)}
             </Text>

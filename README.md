@@ -1,6 +1,6 @@
-# Remote Support Mobile
+﻿# Remote Support Mobile
 
-Aplicativo React Native com Expo para suporte técnico remoto em tempo real. O app possui dois perfis, Atendente e Cliente, pareados por código de sessão. Durante a sessão, os usuários podem trocar mensagens, solicitar captura da tela do app do Cliente, enviar comandos predefinidos e abrir URLs em uma WebView in-app.
+Aplicativo React Native com Expo para suporte tÃ©cnico remoto em tempo real. O app possui dois perfis, Atendente e Cliente, pareados por cÃ³digo de sessÃ£o. Durante a sessÃ£o, os usuÃ¡rios podem trocar mensagens, solicitar captura da tela do app do Cliente, enviar comandos predefinidos e abrir URLs em uma WebView in-app.
 
 ## Stack
 
@@ -17,17 +17,17 @@ Aplicativo React Native com Expo para suporte técnico remoto em tempo real. O a
 
 ## Funcionalidades
 
-- Seleção de perfil no início do fluxo.
-- Atendente gera um código de sessão de 6 caracteres.
-- Cliente entra usando o código informado pelo atendente.
-- Status de sessão em tempo real: aguardando, conectado e encerrado.
-- Chat bidirecional com indicador de digitação.
-- Solicitação de captura da tela renderizada do app do Cliente pelo Atendente.
+- SeleÃ§Ã£o de perfil no inÃ­cio do fluxo.
+- Atendente gera um cÃ³digo de sessÃ£o de 6 caracteres.
+- Cliente entra usando o cÃ³digo informado pelo atendente.
+- Status de sessÃ£o em tempo real: aguardando, conectado e encerrado.
+- Chat bidirecional com indicador de digitaÃ§Ã£o.
+- SolicitaÃ§Ã£o de captura da tela renderizada do app do Cliente pelo Atendente.
 - Visualizador dedicado para a captura recebida.
 - Comandos predefinidos enviados do Atendente para o Cliente.
-- Comando de navegação abre URL em WebView in-app.
-- WebView também pode ser aberta por links enviados no chat.
-- Monitoramento de performance com FPS, tempo de renderização e JS heap, com relatório no console ao encerrar ou desmontar a sessão monitorada.
+- Comando de navegaÃ§Ã£o abre URL em WebView in-app.
+- WebView tambÃ©m pode ser aberta por links enviados no chat.
+- Monitoramento de performance com FPS, tempo de renderizaÃ§Ã£o e JS heap, com relatÃ³rio no console ao encerrar ou desmontar a sessÃ£o monitorada.
 
 ## Requisitos
 
@@ -36,7 +36,7 @@ Aplicativo React Native com Expo para suporte técnico remoto em tempo real. O a
 - Expo Go ou ambiente Android/iOS configurado
 - Projeto Firebase com Realtime Database habilitado
 
-## Instalação
+## InstalaÃ§Ã£o
 
 ```bash
 npm install
@@ -54,11 +54,11 @@ No Windows PowerShell:
 Copy-Item .env.example .env
 ```
 
-Preencha as variáveis com os dados do seu projeto Firebase.
+Preencha as variÃ¡veis com os dados do seu projeto Firebase.
 
-## Variáveis de ambiente
+## VariÃ¡veis de ambiente
 
-O Expo expõe para o app apenas variáveis com prefixo `EXPO_PUBLIC_`.
+O Expo expÃµe para o app apenas variÃ¡veis com prefixo `EXPO_PUBLIC_`.
 
 ```env
 EXPO_PUBLIC_FIREBASE_API_KEY=
@@ -72,9 +72,9 @@ EXPO_PUBLIC_FIREBASE_APP_ID=
 
 ## Firebase Realtime Database
 
-O app usa o Firebase Realtime Database como servidor de comunicação em tempo real. A estrutura principal fica sob `sessions/{sessionCode}`.
+O app usa o Firebase Realtime Database como servidor de comunicaÃ§Ã£o em tempo real. A estrutura principal fica sob `sessions/{sessionCode}`.
 
-Exemplo de dados gravados durante uma sessão:
+Exemplo de dados gravados durante uma sessÃ£o:
 
 ```txt
 sessions/{code}
@@ -90,7 +90,7 @@ sessions/{code}
   commands
 ```
 
-Para desenvolvimento, configure regras adequadas ao ambiente de teste. Em produção, as regras devem ser endurecidas com autenticação e validação por sessão.
+Para desenvolvimento, configure regras adequadas ao ambiente de teste. Em produÃ§Ã£o, as regras devem ser endurecidas com autenticaÃ§Ã£o e validaÃ§Ã£o por sessÃ£o.
 
 Regras de desenvolvimento para o desafio:
 
@@ -107,11 +107,11 @@ Regras de desenvolvimento para o desafio:
 }
 ```
 
-No Firebase Console, acesse Realtime Database > Rules, cole o conteúdo acima e publique. O mesmo conteúdo está em `database.rules.json`.
+No Firebase Console, acesse Realtime Database > Rules, cole o conteÃºdo acima e publique. O mesmo conteÃºdo estÃ¡ em `database.rules.json`.
 
-Se o app mostrar `Permissão negada no Firebase`, significa que o banco atual está com regras mais restritivas ou que a variável `EXPO_PUBLIC_FIREBASE_DATABASE_URL` aponta para outro projeto ou banco.
+Se o app mostrar `PermissÃ£o negada no Firebase`, significa que o banco atual estÃ¡ com regras mais restritivas ou que a variÃ¡vel `EXPO_PUBLIC_FIREBASE_DATABASE_URL` aponta para outro projeto ou banco.
 
-## Execução
+## ExecuÃ§Ã£o
 
 Iniciar o Expo:
 
@@ -119,7 +119,7 @@ Iniciar o Expo:
 npm start
 ```
 
-Rodar com túnel:
+Rodar com tÃºnel:
 
 ```bash
 npm run start:tunnel
@@ -149,7 +149,7 @@ Validar TypeScript:
 npm run typecheck
 ```
 
-Conferir compatibilidade de dependências Expo:
+Conferir compatibilidade de dependÃªncias Expo:
 
 ```bash
 npx expo install --check
@@ -158,81 +158,83 @@ npx expo install --check
 ## Fluxo de uso
 
 1. Abra o app como Atendente.
-2. O app cria uma sessão e exibe um código.
-3. Abra outra instância do app como Cliente.
-4. Digite o código de sessão.
-5. Com a sessão conectada, teste:
+2. O app cria uma sessÃ£o e exibe um cÃ³digo.
+3. Abra outra instÃ¢ncia do app como Cliente.
+4. Digite o cÃ³digo de sessÃ£o.
+5. Com a sessÃ£o conectada, teste:
    - mensagens nos dois sentidos;
-   - indicador de digitação;
-   - solicitação de captura da tela do app pelo Atendente;
+   - indicador de digitaÃ§Ã£o;
+   - solicitaÃ§Ã£o de captura da tela do app pelo Atendente;
    - comandos predefinidos;
    - comando de URL abrindo WebView;
-   - encerramento da sessão por qualquer perfil.
+   - encerramento da sessÃ£o por qualquer perfil.
 
 ## Arquitetura
 
-O projeto usa organização por feature:
+O projeto usa organizaÃ§Ã£o por feature:
 
 ```txt
 src
-  app              providers e composição global
-  features         módulos de produto
+  app              providers e composiÃ§Ã£o global
+  features         mÃ³dulos de produto
     chat           chat, typing e mensagens
     commands       comandos remotos
-    performance    medição e relatório de performance
-    screenshot     solicitação, captura e visualização
-    session        criação, entrada e encerramento de sessão
-    webview        navegação in-app
+    performance    mediÃ§Ã£o e relatÃ³rio de performance
+    screenshot     solicitaÃ§Ã£o, captura e visualizaÃ§Ã£o
+    session        criaÃ§Ã£o, entrada e encerramento de sessÃ£o
+    webview        navegaÃ§Ã£o in-app
   navigation       stack e tipos de rotas
-  services         integrações externas
-  shared           UI reutilizável
+  services         integraÃ§Ãµes externas
+  shared           UI reutilizÃ¡vel
   store            Redux store raiz
 ```
 
-As features mantêm seus componentes, services, stores e tipos próximos. Código compartilhado fica em `src/shared`.
+As features mantÃªm seus componentes, services, stores e tipos prÃ³ximos. CÃ³digo compartilhado fica em `src/shared`.
 
-## Decisões técnicas
+## DecisÃµes tÃ©cnicas
 
-- Firebase Realtime Database foi escolhido para reduzir a complexidade de servidor e entregar comunicação em tempo real sem backend Node dedicado.
-- Redux Toolkit centraliza estados compartilhados de sessão, chat, comandos, captura de tela e performance.
-- Gluestack UI com NativeWind fornece uma base visual consistente e reduz repetição de `StyleSheet`.
-- A tipografia do app usa Poppins nos textos, botões, badges, inputs e telas modais para manter consistência visual.
-- `react-native-view-shot` captura a superfície renderizada do app do Cliente para envio imediato ao Atendente. Em Expo, esta abordagem evita permissões nativas sensíveis para captura da tela inteira do sistema operacional.
+- Firebase Realtime Database foi escolhido para reduzir a complexidade de servidor e entregar comunicaÃ§Ã£o em tempo real sem backend Node dedicado.
+- Redux Toolkit centraliza estados compartilhados de sessÃ£o, chat, comandos, captura de tela e performance.
+- Gluestack UI com NativeWind fornece uma base visual consistente e reduz repetiÃ§Ã£o de `StyleSheet`.
+- A tipografia do app usa Poppins nos textos, botÃµes, badges, inputs e telas modais para manter consistÃªncia visual.
+- `react-native-view-shot` captura a superfÃ­cie renderizada do app do Cliente para envio imediato ao Atendente. Em Expo, esta abordagem evita permissÃµes nativas sensÃ­veis para captura da tela inteira do sistema operacional.
 - WebView in-app evita abrir navegador externo durante o suporte.
-- A presença online/offline usa `onDisconnect` do Firebase para marcar quedas inesperadas de conexão e encerrar a sessão quando um perfil desconecta.
+- A presenÃ§a online/offline usa `onDisconnect` do Firebase para marcar quedas inesperadas de conexÃ£o e encerrar a sessÃ£o quando um perfil desconecta.
 
 ## Performance
 
-O monitoramento inicia quando a sessão entra em estado conectado. Ao desmontar a tela ou encerrar a sessão monitorada, o app gera um relatório no console com:
+O monitoramento inicia quando a sessão entra em estado conectado. Ao desmontar a tela ou encerrar a sessão monitorada, o app gera no Metro o grupo `PERFORMANCE REPORT - SUPPORT SESSION`.
 
-- FPS médio, mínimo e máximo;
-- tempo médio de renderização por componente monitorado;
-- média e pico de JS heap quando disponível.
+A coleta inclui:
 
-Observação: `performance.memory` pode não estar disponível em todos os runtimes React Native. Quando indisponível, os valores de JS heap podem aparecer como `0`.
+- FPS por janela de aproximadamente 1 segundo, calculado com `requestAnimationFrame`;
+- tempo médio de frame, pior frame, P95 de frame, frames estimados perdidos e taxa de jank;
+- tempo de render por componente instrumentado, medindo o intervalo entre o início do render funcional e o commit observado no `useEffect`;
+- quantidade de renders, média, mediana, P95, máximo, renders acima de 16 ms e intervalo médio entre renders por componente;
+- JS heap inicial, final, médio, pico e variação quando `performance.memory` está disponível no runtime.
 
-Para demonstrar no vídeo, mantenha o console do Metro visível e encerre a sessão pelo app. O grupo `RELATÓRIO DE PERFORMANCE - SESSÃO DE SUPORTE` deve aparecer no console com FPS, JS heap e tempos de renderização.
+Observação: alguns runtimes nativos do React Native não expõem `performance.memory`. Quando isso acontece, o relatório marca a memória como indisponível em vez de apresentar valores artificiais.
 
-O relatório é exibido em tabelas no Metro, com resumo da sessão, contagem de amostras coletadas, status de FPS/heap e lista de componentes ordenada pelo maior tempo médio de renderização.
+Para demonstrar no vídeo, mantenha o console do Metro visível e encerre a sessão pelo app. O relatório aparece em tabelas com resumo da sessão, diagnóstico de FPS, renderização por componente, memória JS e leitura técnica final.
 
-## Limitações conhecidas
+## LimitaÃ§Ãµes conhecidas
 
-- A captura de tela registra a tela renderizada pelo app, não a tela inteira do sistema operacional.
-- O código de sessão é gerado localmente; uma melhoria futura é verificar colisão no Firebase antes de criar a sessão.
-- Não há autenticação completa, conforme permitido pelo desafio.
-- Notificações locais em background não foram implementadas porque são requisito opcional.
+- A captura de tela registra a tela renderizada pelo app, nÃ£o a tela inteira do sistema operacional.
+- O cÃ³digo de sessÃ£o Ã© gerado localmente; uma melhoria futura Ã© verificar colisÃ£o no Firebase antes de criar a sessÃ£o.
+- NÃ£o hÃ¡ autenticaÃ§Ã£o completa, conforme permitido pelo desafio.
+- NotificaÃ§Ãµes locais em background nÃ£o foram implementadas porque sÃ£o requisito opcional.
 - Testes automatizados ainda precisam ser adicionados para atingir a cobertura exigida pelo desafio.
 
-## Vídeo de demonstração
+## VÃ­deo de demonstraÃ§Ã£o
 
-O desafio exige um vídeo de 1 a 3 minutos. O vídeo deve mostrar:
+O desafio exige um vÃ­deo de 1 a 3 minutos. O vÃ­deo deve mostrar:
 
-- seleção de perfil;
-- pareamento por código;
+- seleÃ§Ã£o de perfil;
+- pareamento por cÃ³digo;
 - chat em tempo real;
-- solicitação de captura pelo Atendente;
-- envio automático da captura da tela do app pelo Cliente;
-- visualização da captura recebida no visualizador dedicado;
+- solicitaÃ§Ã£o de captura pelo Atendente;
+- envio automÃ¡tico da captura da tela do app pelo Cliente;
+- visualizaÃ§Ã£o da captura recebida no visualizador dedicado;
 - envio de comandos;
 - WebView in-app;
-- relatório de performance no console ao encerrar a sessão.
+- relatÃ³rio de performance no console ao encerrar a sessÃ£o.

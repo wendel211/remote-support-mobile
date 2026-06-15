@@ -1,5 +1,13 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { DevSettings, Linking, Modal, Keyboard, KeyboardAvoidingView, Platform } from 'react-native';
+import {
+  Animated,
+  DevSettings,
+  Keyboard,
+  KeyboardAvoidingView,
+  Linking,
+  Modal,
+  Platform,
+} from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -47,7 +55,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Client'>;
 export function ClientScreen({ navigation }: Props): React.JSX.Element {
   const dispatch = useAppDispatch();
   const insets = useSafeAreaInsets();
-  const { isDark } = useTheme();
+  const { isDark, colors } = useTheme();
   const error = useAppSelector((state) => state.session.error);
   const [code, setCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -55,27 +63,90 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
   const [connectedCode, setConnectedCode] = useState('');
   const [showEndedModal, setShowEndedModal] = useState(false);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+  const [isCodeFocused, setIsCodeFocused] = useState(false);
   const unsubscribeRef = useRef<(() => void) | null>(null);
-
   const isConnectedRef = useRef(false);
   const connectedCodeRef = useRef('');
+  const entryAnim = useRef(new Animated.Value(0)).current;
+  const shakeAnim = useRef(new Animated.Value(0)).current;
+  const sendingPulse = useRef(new Animated.Value(1)).current;
+  const endedModalAnim = useRef(new Animated.Value(0)).current;
+  const pendingCommand = useAppSelector(
+    (state) => state.commands.pendingCommand,
+  );
+  const { viewRef, isSending } = useScreenshotCapture(connectedCode);
 
   useEffect(() => {
     isConnectedRef.current = isConnected;
     connectedCodeRef.current = connectedCode;
   }, [isConnected, connectedCode]);
 
-  usePerformanceMonitor(isConnected ? connectedCode : '');
+  useEffect(() => {
+    Animated.timing(entryAnim, {
+      toValue: 1,
+      duration: 420,
+      useNativeDriver: true,
+    }).start();
+  }, [entryAnim]);
+
+  useEffect(() => {
+    if (!isSending) {
+      sendingPulse.stopAnimation();
+      sendingPulse.setValue(1);
+      return undefined;
+    }
+
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(sendingPulse, {
+          toValue: 0.4,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+        Animated.timing(sendingPulse, {
+          toValue: 1,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    animation.start();
+
+    return () => animation.stop();
+  }, [isSending, sendingPulse]);
+
+  useEffect(() => {
+    if (!showEndedModal) {
+      endedModalAnim.setValue(0);
+      return;
+    }
+
+    Animated.spring(endedModalAnim, {
+      toValue: 1,
+      friction: 7,
+      tension: 90,
+      useNativeDriver: true,
+    }).start();
+  }, [endedModalAnim, showEndedModal]);
+
+  const { finishPerformanceReport } = usePerformanceMonitor(
+    isConnected ? connectedCode : '',
+  );
   useRenderMetric('ClientScreen');
 
-  const pendingCommand = useAppSelector(
-    (state) => state.commands.pendingCommand,
-  );
-
-  const { viewRef, isSending } = useScreenshotCapture(connectedCode);
+  const runInvalidFeedback = useCallback(() => {
+    shakeAnim.setValue(0);
+    Animated.sequence([
+      Animated.timing(shakeAnim, { toValue: 1, duration: 60, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: -1, duration: 60, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 1, duration: 60, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 0, duration: 60, useNativeDriver: true }),
+    ]).start();
+  }, [shakeAnim]);
 
   const handleJoinSession = useCallback(async () => {
     if (code.length !== 6) {
+      runInvalidFeedback();
       dispatch(setError('O código deve ter 6 caracteres.'));
       return;
     }
@@ -102,6 +173,7 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
               unsubscribeRef.current();
               unsubscribeRef.current = null;
             }
+            finishPerformanceReport();
             dispatch(clearMessages());
             dispatch(clearSession());
             dispatch(clearScreenshot());
@@ -112,13 +184,14 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
         },
       );
     } catch (err: unknown) {
+      runInvalidFeedback();
       const message =
         err instanceof Error ? err.message : 'Erro ao entrar na sessão.';
       dispatch(setError(message));
     } finally {
       setIsLoading(false);
     }
-  }, [code, dispatch, navigation]);
+  }, [code, dispatch, finishPerformanceReport, runInvalidFeedback]);
 
   useEffect(() => {
     return () => {
@@ -179,13 +252,14 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
         unsubscribeRef.current();
         unsubscribeRef.current = null;
       }
+      finishPerformanceReport();
       await endSession(connectedCode);
       dispatch(clearMessages());
       dispatch(clearSession());
       dispatch(clearScreenshot());
       navigation.navigate('RoleSelection');
     }
-  }, [connectedCode, dispatch, navigation]);
+  }, [connectedCode, dispatch, finishPerformanceReport, navigation]);
 
   const handleCloseEndedModal = useCallback(() => {
     setShowEndedModal(false);
@@ -251,127 +325,347 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
         <Box
           ref={viewRef}
           className="flex-1"
-          style={{ backgroundColor: isDark ? '#090D16' : '#F3F4F6' }}
+          style={{ backgroundColor: colors.bg }}
           collapsable={false}
         >
           <StatusBar style={isDark ? 'light' : 'dark'} />
           <VStack
             className="px-4 pb-3"
-            style={{ backgroundColor: isDark ? '#090D16' : '#F3F4F6', paddingTop: Math.max(insets.top, 24) + 10 }}
+            style={{ backgroundColor: colors.bg, paddingTop: Math.max(insets.top, 24) + 10 }}
             space="sm"
           >
             <HStack
-              className="items-center justify-between rounded-2xl border px-4 py-3 shadow-sm"
+              className="items-center justify-between rounded-2xl border px-4 py-3"
               style={{
-                backgroundColor: isDark ? '#161F30' : '#FFFFFF',
-                borderColor: isDark ? '#24334A' : '#E2E8F0'
+                backgroundColor: colors.card,
+                borderColor: colors.cardBorder,
               }}
             >
               <HStack className="items-center flex-1" space="md">
-                <Box className="h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: isDark ? '#1E293B' : '#F8FAFC' }}>
+                <Box className="h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: colors.surfaceElevated }}>
                   <ClientIcon />
                 </Box>
-                <Text className="text-[17px]" style={{ color: isDark ? '#FFFFFF' : '#0F172A' }} weight="bold">
-                  Cliente
-                </Text>
-                <Box className="rounded-md px-2 py-0.5" style={{ backgroundColor: isDark ? '#1E293B' : '#F1F5F9' }}>
-                  <Text className="text-[12px] leading-4" style={{ color: isDark ? '#94A3B8' : '#64748B' }} weight="bold">
-                    #{connectedCode}
+                <VStack className="flex-1" space="xs">
+                  <HStack className="items-center" space="sm">
+                    <Text className="text-[17px]" style={{ color: colors.text }} weight="bold">
+                      Cliente
+                    </Text>
+                  </HStack>
+                  <Text className="text-[12px] leading-4" style={{ color: colors.textSecondary }} weight="bold">
+                    Sessão #{connectedCode}
                   </Text>
-                </Box>
-                <StatusBadge status="connected" />
+                </VStack>
               </HStack>
+              <StatusBadge status="connected" />
             </HStack>
 
+            <HStack className="justify-center rounded-xl py-2" style={{ backgroundColor: colors.successSoft }} space="sm">
+              <ConnectedIcon />
+              <Text className="text-[12px] leading-4" style={{ color: colors.success }} weight="semibold">
+                Sessão ativa e sincronizada
+              </Text>
+            </HStack>
+          </VStack>
+
           {isSending && (
-            <Box
-              className="rounded-xl border py-2"
+            <Animated.View
+              pointerEvents="none"
               style={{
-                backgroundColor: isDark ? 'rgba(249, 115, 22, 0.1)' : '#FFF7ED',
-                borderColor: isDark ? 'rgba(249, 115, 22, 0.3)' : '#FED7AA'
+                position: 'absolute',
+                top: Math.max(insets.top, 24) + 84,
+                left: 16,
+                right: 16,
+                zIndex: 20,
+                opacity: sendingPulse,
+                transform: [
+                  {
+                    translateY: sendingPulse.interpolate({
+                      inputRange: [0.4, 1],
+                      outputRange: [-2, 0],
+                    }),
+                  },
+                ],
               }}
             >
-              <Text
-                className="text-center text-[12px]"
-                style={{ color: '#F97316' }}
-                weight="semibold"
+              <HStack
+                className="items-center justify-center rounded-2xl border px-4 py-3"
+                style={{
+                  backgroundColor: colors.warningSoft,
+                  borderColor: colors.warningBorder,
+                }}
+                space="sm"
               >
-                Enviando captura de tela...
-              </Text>
+                <MaterialCommunityIcons name="cloud-upload-outline" size={18} color={colors.warning} />
+                <Text className="text-center text-[12px]" style={{ color: colors.warning }} weight="semibold">
+                  Enviando captura de tela...
+                </Text>
+              </HStack>
+            </Animated.View>
+          )}
+
+          <ChatScreen
+            sessionCode={connectedCode}
+            currentRole="client"
+          />
+
+          {!isKeyboardVisible && (
+            <Box
+              className="px-4 pt-3"
+              style={{
+                backgroundColor: colors.card,
+                paddingBottom: Math.max(insets.bottom, 28),
+                borderTopWidth: 1,
+                borderTopColor: colors.separator,
+              }}
+            >
+              <Button
+                className="min-h-12 w-full"
+                tone="danger"
+                onPress={() => void handleLeaveSession()}
+              >
+                <HStack className="items-center justify-center" space="sm">
+                  <MaterialCommunityIcons name="power" size={18} color="#FFFFFF" />
+                  <ButtonText tone="danger">Sair da sessão</ButtonText>
+                </HStack>
+              </Button>
             </Box>
           )}
 
-          <HStack className="justify-center rounded-xl py-2" style={{ backgroundColor: isDark ? 'rgba(5, 150, 105, 0.1)' : '#ECFDF5' }} space="sm">
-            <ConnectedIcon />
-            <Text className="text-[12px] leading-4" style={{ color: isDark ? '#34D399' : '#059669' }} weight="semibold">
-              Conectado ao atendente
-            </Text>
-          </HStack>
-        </VStack>
+          <CommandModal
+            command={pendingCommand}
+            sessionCode={connectedCode}
+            onAcknowledge={handleAcknowledgeCommand}
+          />
 
-        <ChatScreen
-          sessionCode={connectedCode}
-          currentRole="client"
-        />
+          <Modal
+            visible={showEndedModal}
+            transparent
+            animationType="fade"
+            statusBarTranslucent
+          >
+            <Box className="flex-1 items-center justify-center px-8" style={{ backgroundColor: colors.overlay }}>
+              <Animated.View
+                style={{
+                  width: '100%',
+                  opacity: endedModalAnim,
+                  transform: [
+                    {
+                      scale: endedModalAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0.88, 1],
+                      }),
+                    },
+                  ],
+                }}
+              >
+                <Box
+                  className="w-full rounded-panel px-6 py-8"
+                  style={{
+                    backgroundColor: colors.card,
+                    borderWidth: 1,
+                    borderColor: colors.cardBorder,
+                  }}
+                >
+                  <VStack className="items-center" space="md">
+                    <Box
+                      className="h-16 w-16 items-center justify-center rounded-2xl border"
+                      style={{
+                        backgroundColor: colors.dangerSoft,
+                        borderColor: colors.dangerBorder,
+                      }}
+                    >
+                      <MaterialCommunityIcons name="alert-circle-outline" size={36} color={colors.danger} />
+                    </Box>
 
-        {!isKeyboardVisible && (
-          <Box 
-            className="px-4 pt-3"
+                    <VStack className="items-center" space="xs">
+                      <Text className="text-center text-[20px] leading-[26px]" style={{ color: colors.text }} weight="bold">
+                        Sessão encerrada
+                      </Text>
+                      <Text className="text-center text-[13px] leading-[19px]" style={{ color: colors.textSecondary }}>
+                        O atendimento foi encerrado pelo atendente.
+                      </Text>
+                    </VStack>
+
+                    <Button className="mt-2 w-full" onPress={handleCloseEndedModal}>
+                      <ButtonText>Entendido</ButtonText>
+                    </Button>
+                  </VStack>
+                </Box>
+              </Animated.View>
+            </Box>
+          </Modal>
+        </Box>
+      </KeyboardAvoidingView>
+    );
+  }
+
+  return (
+    <Box
+      className="flex-1 px-6"
+      style={{
+        backgroundColor: colors.bg,
+        paddingTop: Math.max(insets.top, 24) + 16,
+        paddingBottom: Math.max(insets.bottom, 20),
+      }}
+    >
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+      <Animated.View
+        style={{
+          flex: 1,
+          opacity: entryAnim,
+          transform: [
+            {
+              translateY: entryAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [18, 0],
+              }),
+            },
+          ],
+        }}
+      >
+        <VStack className="flex-1 justify-center" space="xl">
+          <VStack className="items-center" space="md">
+            <Box className="h-16 w-16 items-center justify-center rounded-2xl" style={{ backgroundColor: colors.surfaceElevated }}>
+              <ClientIcon large />
+            </Box>
+            <VStack className="items-center" space="xs">
+              <Text className="text-[25px] leading-[30px]" style={{ color: colors.text }} weight="bold">
+                Entrar na sessão
+              </Text>
+              <Text className="max-w-[255px] text-center text-[13px] leading-[19px]" style={{ color: colors.textSecondary }}>
+                Digite o código de 6 caracteres fornecido pelo atendente.
+              </Text>
+            </VStack>
+          </VStack>
+
+          <Animated.View
             style={{
-              backgroundColor: isDark ? '#161F30' : '#FFFFFF',
-              paddingBottom: Math.max(insets.bottom, 12)
+              transform: [
+                {
+                  translateX: shakeAnim.interpolate({
+                    inputRange: [-1, 0, 1],
+                    outputRange: [-8, 0, 8],
+                  }),
+                },
+              ],
             }}
           >
-            <Button
-              className="min-h-12 w-full"
-              tone="danger"
-              onPress={() => void handleLeaveSession()}
-            >
-              <HStack className="items-center justify-center" space="sm">
-                <MaterialCommunityIcons name="power" size={18} color="#FFFFFF" />
-                <ButtonText tone="danger">Sair da sessão</ButtonText>
-              </HStack>
-            </Button>
-          </Box>
-        )}
-
-        <CommandModal
-          command={pendingCommand}
-          sessionCode={connectedCode}
-          onAcknowledge={handleAcknowledgeCommand}
-        />
-
-        <Modal
-          visible={showEndedModal}
-          transparent
-          animationType="fade"
-          statusBarTranslucent
-        >
-          <Box className="flex-1 items-center justify-center bg-black/60 px-8">
             <Box
-              className="w-full rounded-panel px-6 py-8 shadow-soft"
+              className="rounded-2xl border p-5"
               style={{
-                backgroundColor: isDark ? '#161F30' : '#FFFFFF',
-                borderWidth: isDark ? 1 : 0,
-                borderColor: '#24334A'
+                backgroundColor: colors.card,
+                borderColor: error ? colors.dangerBorder : colors.cardBorder,
+              }}
+            >
+              <VStack space="md">
+                <Input
+                  className="min-h-[66px] text-center text-[25px] font-bold tracking-[8px]"
+                  value={code}
+                  onChangeText={handleCodeChange}
+                  onFocus={() => setIsCodeFocused(true)}
+                  onBlur={() => setIsCodeFocused(false)}
+                  placeholder="CÓDIGO"
+                  placeholderTextColor={colors.placeholder}
+                  maxLength={6}
+                  autoCapitalize="characters"
+                  autoCorrect={false}
+                  editable={!isLoading}
+                  style={{
+                    backgroundColor: colors.inputBg,
+                    borderColor: error ? colors.dangerBorder : isCodeFocused ? colors.accent : colors.inputBorder,
+                    color: colors.inputText,
+                    borderWidth: isCodeFocused ? 2 : 1,
+                  }}
+                />
+
+                {error ? (
+                  <Box
+                    className="rounded-xl border px-4 py-3"
+                    style={{
+                      backgroundColor: colors.dangerSoft,
+                      borderColor: colors.dangerBorder,
+                    }}
+                  >
+                    <Text className="text-center text-[13px]" style={{ color: colors.danger }} weight="medium">
+                      {error}
+                    </Text>
+                  </Box>
+                ) : null}
+
+                <Button
+                  className="min-h-12"
+                  isLoading={isLoading}
+                  disabled={isLoading || code.length !== 6}
+                  onPress={() => void handleJoinSession()}
+                >
+                  <ButtonText>Entrar na sessão</ButtonText>
+                </Button>
+
+                <Button
+                  className="min-h-12"
+                  variant="outline"
+                  tone="secondary"
+                  style={{
+                    backgroundColor: 'transparent',
+                    borderColor: colors.inputBorder,
+                  }}
+                  onPress={() => navigation.navigate('RoleSelection')}
+                >
+                  <ButtonText variant="outline" tone="secondary" style={{ color: colors.textSecondary }}>
+                    Voltar
+                  </ButtonText>
+                </Button>
+              </VStack>
+            </Box>
+          </Animated.View>
+        </VStack>
+      </Animated.View>
+
+      <Modal
+        visible={showEndedModal}
+        transparent
+        animationType="fade"
+        statusBarTranslucent
+      >
+        <Box className="flex-1 items-center justify-center px-8" style={{ backgroundColor: colors.overlay }}>
+          <Animated.View
+            style={{
+              width: '100%',
+              opacity: endedModalAnim,
+              transform: [
+                {
+                  scale: endedModalAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0.88, 1],
+                  }),
+                },
+              ],
+            }}
+          >
+            <Box
+              className="w-full rounded-panel px-6 py-8"
+              style={{
+                backgroundColor: colors.card,
+                borderWidth: 1,
+                borderColor: colors.cardBorder,
               }}
             >
               <VStack className="items-center" space="md">
                 <Box
                   className="h-16 w-16 items-center justify-center rounded-2xl border"
                   style={{
-                    backgroundColor: isDark ? 'rgba(239, 68, 68, 0.1)' : '#FEF2F2',
-                    borderColor: isDark ? '#7F1D1D' : '#FCA5A5'
+                    backgroundColor: colors.dangerSoft,
+                    borderColor: colors.dangerBorder,
                   }}
                 >
-                  <MaterialCommunityIcons name="alert-circle-outline" size={36} color={isDark ? '#EF4444' : '#DC2626'} />
+                  <MaterialCommunityIcons name="alert-circle-outline" size={36} color={colors.danger} />
                 </Box>
 
                 <VStack className="items-center" space="xs">
-                  <Text className="text-center text-[20px] leading-[26px]" style={{ color: isDark ? '#FFFFFF' : '#0F172A' }} weight="bold">
+                  <Text className="text-center text-[20px] leading-[26px]" style={{ color: colors.text }} weight="bold">
                     Sessão encerrada
                   </Text>
-                  <Text className="text-center text-[13px] leading-[19px]" style={{ color: isDark ? '#94A3B8' : '#64748B' }}>
+                  <Text className="text-center text-[13px] leading-[19px]" style={{ color: colors.textSecondary }}>
                     O atendimento foi encerrado pelo atendente.
                   </Text>
                 </VStack>
@@ -381,140 +675,7 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
                 </Button>
               </VStack>
             </Box>
-          </Box>
-        </Modal>
-      </Box>
-    </KeyboardAvoidingView>
-  );
-}
-
-  return (
-    <Box
-      className="flex-1 px-7"
-      style={{
-        backgroundColor: isDark ? '#090D16' : '#F3F4F6',
-        paddingTop: Math.max(insets.top, 24) + 16,
-        paddingBottom: Math.max(insets.bottom, 20),
-      }}
-    >
-      <StatusBar style={isDark ? 'light' : 'dark'} />
-      <VStack className="flex-1 justify-center" space="xl">
-        <VStack className="items-center" space="md">
-          <Box className="h-16 w-16 items-center justify-center rounded-2xl" style={{ backgroundColor: isDark ? '#1E293B' : '#F8FAFC' }}>
-            <ClientIcon large />
-          </Box>
-          <VStack className="items-center" space="xs">
-            <Text className="text-[25px] leading-[30px]" style={{ color: isDark ? '#FFFFFF' : '#111827' }} weight="bold">
-              Entrar na sessão
-            </Text>
-            <Text className="max-w-[255px] text-center text-[13px] leading-[19px]" style={{ color: isDark ? '#94A3B8' : '#64748B' }}>
-              Digite o código de 6 caracteres fornecido pelo atendente.
-            </Text>
-          </VStack>
-        </VStack>
-
-        <Box
-          className="rounded-2xl border p-5 shadow-sm"
-          style={{
-            backgroundColor: isDark ? '#161F30' : '#FFFFFF',
-            borderColor: isDark ? '#24334A' : '#E2E8F0'
-          }}
-        >
-          <VStack space="md">
-            <Input
-              className="min-h-[66px] text-center text-[25px] font-bold tracking-[8px]"
-              value={code}
-              onChangeText={handleCodeChange}
-              placeholder="CÓDIGO"
-              placeholderTextColor={isDark ? '#475569' : '#98A2B3'}
-              maxLength={6}
-              autoCapitalize="characters"
-              autoCorrect={false}
-              editable={!isLoading}
-              style={isDark ? { backgroundColor: '#090D16', borderColor: '#24334A', color: '#FFFFFF' } : undefined}
-            />
-
-            {error ? (
-              <Box
-                className="rounded-xl border px-4 py-3"
-                style={{
-                  backgroundColor: isDark ? 'rgba(239, 68, 68, 0.1)' : '#FEF2F2',
-                  borderColor: isDark ? '#7F1D1D' : '#FCA5A5'
-                }}
-              >
-                <Text className="text-center text-[13px]" tone="danger" weight="medium">
-                  {error}
-                </Text>
-              </Box>
-            ) : null}
-
-            <Button
-              className="min-h-12"
-              isLoading={isLoading}
-              disabled={isLoading || code.length !== 6}
-              onPress={() => void handleJoinSession()}
-            >
-              <ButtonText>Entrar na sessão</ButtonText>
-            </Button>
-
-            <Button
-              className="min-h-12"
-              variant="outline"
-              tone="secondary"
-              style={{
-                backgroundColor: 'transparent',
-                borderColor: isDark ? '#24334A' : '#D7DEE8'
-              }}
-              onPress={() => navigation.navigate('RoleSelection')}
-            >
-              <ButtonText variant="outline" tone="secondary" style={{ color: isDark ? '#94A3B8' : '#475569' }}>
-                Voltar
-              </ButtonText>
-            </Button>
-          </VStack>
-        </Box>
-      </VStack>
-
-      <Modal
-        visible={showEndedModal}
-        transparent
-        animationType="fade"
-        statusBarTranslucent
-      >
-        <Box className="flex-1 items-center justify-center bg-black/60 px-8">
-          <Box
-            className="w-full rounded-panel px-6 py-8 shadow-soft"
-            style={{
-              backgroundColor: isDark ? '#161F30' : '#FFFFFF',
-              borderWidth: isDark ? 1 : 0,
-              borderColor: '#24334A'
-            }}
-          >
-            <VStack className="items-center" space="md">
-              <Box
-                className="h-16 w-16 items-center justify-center rounded-2xl border"
-                style={{
-                  backgroundColor: isDark ? 'rgba(239, 68, 68, 0.1)' : '#FEF2F2',
-                  borderColor: isDark ? '#7F1D1D' : '#FCA5A5'
-                }}
-              >
-                <MaterialCommunityIcons name="alert-circle-outline" size={36} color={isDark ? '#EF4444' : '#DC2626'} />
-              </Box>
-
-              <VStack className="items-center" space="xs">
-                <Text className="text-center text-[20px] leading-[26px]" style={{ color: isDark ? '#FFFFFF' : '#0F172A' }} weight="bold">
-                  Sessão encerrada
-                </Text>
-                <Text className="text-center text-[13px] leading-[19px]" style={{ color: isDark ? '#94A3B8' : '#64748B' }}>
-                  O atendimento foi encerrado pelo atendente.
-                </Text>
-              </VStack>
-
-              <Button className="mt-2 w-full" onPress={handleCloseEndedModal}>
-                <ButtonText>Entendido</ButtonText>
-              </Button>
-            </VStack>
-          </Box>
+          </Animated.View>
         </Box>
       </Modal>
     </Box>
@@ -522,9 +683,9 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
 }
 
 function ClientIcon({ large = false }: { large?: boolean }): React.JSX.Element {
-  const { isDark } = useTheme();
+  const { colors } = useTheme();
   const scale = large ? 1.25 : 1;
-  const color = isDark ? '#94A3B8' : '#374151';
+  const color = colors.iconDefault;
   return (
     <Box style={{ height: 28 * scale, width: 28 * scale, alignItems: 'center' }}>
       <Box
@@ -533,7 +694,7 @@ function ClientIcon({ large = false }: { large?: boolean }): React.JSX.Element {
           marginTop: 5 * scale,
           height: 9 * scale,
           width: 9 * scale,
-          backgroundColor: color
+          backgroundColor: color,
         }}
       />
       <Box
@@ -542,7 +703,7 @@ function ClientIcon({ large = false }: { large?: boolean }): React.JSX.Element {
           marginTop: 2 * scale,
           height: 9 * scale,
           width: 16 * scale,
-          backgroundColor: color
+          backgroundColor: color,
         }}
       />
     </Box>

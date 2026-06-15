@@ -9,6 +9,7 @@ import {
   Input,
   Text,
   VStack,
+  useTheme,
 } from '@shared/ui';
 import type { Command, CommandType } from '../types';
 
@@ -36,6 +37,7 @@ export function CommandPicker({
 }: CommandPickerProps): React.JSX.Element {
   const [urlInput, setUrlInput] = useState('');
   const [showUrlInput, setShowUrlInput] = useState(false);
+  const { isDark, colors } = useTheme();
 
   const sendUrlCommand = (url: string): void => {
     const trimmedUrl = url.trim();
@@ -93,7 +95,13 @@ export function CommandPicker({
   };
 
   return (
-    <Box className="border-b border-border bg-surface px-4 py-3">
+    <Box
+      className="border-b px-4 py-3"
+      style={{
+        backgroundColor: colors.card,
+        borderBottomColor: colors.separator,
+      }}
+    >
       <VStack space="sm">
         <ScrollView
           horizontal
@@ -109,13 +117,14 @@ export function CommandPicker({
               onPress={() => handleCommand(definition)}
             >
               <HStack space="xs" style={{ alignItems: 'center' }}>
-                <MaterialCommunityIcons name={definition.icon} size={16} color="#64748B" />
+                <MaterialCommunityIcons name={definition.icon} size={16} color={colors.textSecondary} />
                 <ButtonText
                   className="shrink"
                   variant="outline"
                   tone="secondary"
                   size="sm"
                   numberOfLines={1}
+                  style={{ color: colors.text }}
                 >
                   {definition.label}
                 </ButtonText>
@@ -125,9 +134,16 @@ export function CommandPicker({
         </ScrollView>
 
         {showUrlInput && (
-          <Box className="mt-1 rounded-ui border border-primary-100 bg-primary-50 p-3">
+          <Box
+            className="mt-1 rounded-ui p-3"
+            style={{
+              backgroundColor: isDark ? colors.surfaceElevated : '#EFF6FF',
+              borderWidth: 1,
+              borderColor: isDark ? colors.cardBorder : '#DBEAFE',
+            }}
+          >
             <VStack space="sm">
-              <Text size="xs" tone="primary" weight="semibold">
+              <Text size="xs" weight="semibold" style={{ color: colors.accent }}>
                 URL de destino
               </Text>
               <Input
