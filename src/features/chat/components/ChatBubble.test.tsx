@@ -1,8 +1,10 @@
 import React from 'react';
+import { Pressable } from 'react-native';
 import { fireEvent } from '@testing-library/react-native';
 import { renderWithProviders } from '@test/test-utils';
 import { ChatBubble } from './ChatBubble';
 import type { ChatMessage } from '../types';
+import { Text, useTheme } from '@shared/ui';
 
 const mockNavigate = jest.fn();
 
@@ -83,4 +85,52 @@ describe('ChatBubble', () => {
     expect(mockNavigate).toHaveBeenCalledWith('WebView', { url: 'https://openai.com' });
     expect(getByText('Abrir link')).toBeTruthy();
   });
+
+  it('renders system messages in light theme branch', async () => {
+    const { getByText } = await renderWithProviders(
+      <LightThemeBubble
+        message={makeMessage({ role: 'system', text: 'Aviso do sistema' })}
+        currentRole="client"
+      />,
+    );
+
+    await fireEvent.press(getByText('toggle theme'));
+
+    expect(getByText('Aviso do sistema')).toBeTruthy();
+  });
+
+  it('renders other user urls in light theme branch', async () => {
+    const { getByText } = await renderWithProviders(
+      <LightThemeBubble
+        message={makeMessage({ text: 'https://reactnative.dev', role: 'attendant' })}
+        currentRole="client"
+      />,
+    );
+
+    await fireEvent.press(getByText('toggle theme'));
+    await fireEvent.press(getByText('https://reactnative.dev'));
+
+    expect(mockNavigate).toHaveBeenCalledWith('WebView', { url: 'https://reactnative.dev' });
+  });
 });
+
+function LightThemeBubble({
+  message,
+  currentRole,
+}: {
+  message: ChatMessage;
+  currentRole: ChatMessage['role'];
+}) {
+  const { isDark, toggleTheme } = useTheme();
+
+  return (
+    <>
+      {isDark ? (
+        <Pressable onPress={toggleTheme}>
+          <Text>toggle theme</Text>
+        </Pressable>
+      ) : null}
+      <ChatBubble message={message} currentRole={currentRole} />
+    </>
+  );
+}

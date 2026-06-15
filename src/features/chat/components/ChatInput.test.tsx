@@ -58,6 +58,17 @@ describe('ChatInput', () => {
     expect(onSend).not.toHaveBeenCalled();
   });
 
+  it('does not send an empty disabled input', async () => {
+    const onSend = jest.fn();
+    const { getByText } = await renderWithProviders(
+      <ChatInput onSend={onSend} onTypingChange={jest.fn()} disabled />,
+    );
+
+    await fireEvent.press(getByText('Enviar'));
+
+    expect(onSend).not.toHaveBeenCalled();
+  });
+
   it('does not mark typing for empty text changes', async () => {
     const onTypingChange = jest.fn();
     const { getByPlaceholderText } = await renderWithProviders(
@@ -65,6 +76,9 @@ describe('ChatInput', () => {
     );
 
     await fireEvent.changeText(getByPlaceholderText('Digite uma mensagem...'), '');
+    await act(async () => {
+      jest.advanceTimersByTime(1000);
+    });
 
     expect(onTypingChange).not.toHaveBeenCalledWith(true);
   });
@@ -86,5 +100,22 @@ describe('ChatInput', () => {
 
     expect(onTypingChange).toHaveBeenCalledTimes(1);
     expect(onTypingChange).toHaveBeenCalledWith(true);
+  });
+
+  it('sends after typing timeout has already stopped the indicator', async () => {
+    const onSend = jest.fn();
+    const onTypingChange = jest.fn();
+    const { getByPlaceholderText, getByText } = await renderWithProviders(
+      <ChatInput onSend={onSend} onTypingChange={onTypingChange} />,
+    );
+
+    await fireEvent.changeText(getByPlaceholderText('Digite uma mensagem...'), 'Tudo certo');
+    await act(async () => {
+      jest.advanceTimersByTime(1000);
+    });
+    await fireEvent.press(getByText('Enviar'));
+
+    expect(onTypingChange).toHaveBeenCalledWith(false);
+    expect(onSend).toHaveBeenCalledWith('Tudo certo');
   });
 });

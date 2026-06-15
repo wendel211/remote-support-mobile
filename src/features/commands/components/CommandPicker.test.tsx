@@ -1,8 +1,10 @@
 import React from 'react';
+import { Pressable } from 'react-native';
 import { fireEvent } from '@testing-library/react-native';
 import { Alert, Platform } from 'react-native';
 import { renderWithProviders } from '@test/test-utils';
 import { CommandPicker } from './CommandPicker';
+import { Text, useTheme } from '@shared/ui';
 
 describe('CommandPicker', () => {
   const originalOS = Platform.OS;
@@ -126,4 +128,41 @@ describe('CommandPicker', () => {
 
     expect(onSend).not.toHaveBeenCalled();
   });
+
+  it('keeps already normalized urls and renders url input in light theme', async () => {
+    const onSend = jest.fn();
+    const { getByText, getByPlaceholderText } = await renderWithProviders(
+      <LightThemeCommandPicker onSend={onSend} />,
+    );
+
+    await fireEvent.press(getByText('toggle theme'));
+    await fireEvent.press(getByText('Abrir URL'));
+    await fireEvent.changeText(getByPlaceholderText('https://exemplo.com'), 'https://example.com/path');
+    await fireEvent.press(getByText('Confirmar'));
+
+    expect(onSend).toHaveBeenCalledWith({
+      type: 'NAVIGATE_URL',
+      label: 'Navegar para URL',
+      payload: { url: 'https://example.com/path' },
+    });
+  });
 });
+
+function LightThemeCommandPicker({
+  onSend,
+}: {
+  onSend: React.ComponentProps<typeof CommandPicker>['onSend'];
+}) {
+  const { isDark, toggleTheme } = useTheme();
+
+  return (
+    <>
+      {isDark ? (
+        <Pressable onPress={toggleTheme}>
+          <Text>toggle theme</Text>
+        </Pressable>
+      ) : null}
+      <CommandPicker sessionCode="ABC123" onSend={onSend} />
+    </>
+  );
+}

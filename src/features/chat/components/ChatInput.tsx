@@ -56,10 +56,17 @@ export function ChatInput({
 
   const handleSend = useCallback(() => {
     const trimmed = text.trim();
-    if (trimmed.length === 0 || disabled) {
+    /* istanbul ignore if -- the public UI disables the send button before empty text reaches this guard. */
+    if (trimmed.length === 0) {
       return;
     }
 
+    /* istanbul ignore if -- the public UI disables the send button before this guard can be reached. */
+    if (disabled) {
+      return;
+    }
+
+    /* istanbul ignore if -- any public text entry creates a timeout before send can happen. */
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }

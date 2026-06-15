@@ -22,6 +22,7 @@ Aplicativo React Native com Expo para suporte técnico remoto em tempo real. O a
 - Atendente gera um código de sessão de 6 caracteres.
 - Cliente entra usando o código informado pelo atendente.
 - Status de sessão em tempo real: aguardando, conectado e encerrado.
+- Indicador online/offline baseado na conectividade real do dispositivo.
 - Chat bidirecional com indicador de digitação.
 - Solicitação de captura da tela renderizada do app do Cliente pelo Atendente.
 - Visualizador dedicado para a captura recebida.
@@ -220,6 +221,7 @@ As features mantêm seus componentes, services, stores e tipos próximos. Códig
 - `react-native-view-shot` captura a superfície renderizada do app do Cliente para envio imediato ao Atendente. Em Expo, esta abordagem evita permissões nativas sensíveis para captura da tela inteira do sistema operacional.
 - WebView in-app evita abrir navegador externo durante o suporte.
 - A presença online/offline usa `onDisconnect` do Firebase para marcar quedas inesperadas de conexão e encerrar a sessão quando um perfil desconecta.
+- O estado offline da interface usa `@react-native-community/netinfo` para indicar quando o dispositivo está sem internet e a sessão não está sincronizada.
 - Jest com React Native Testing Library cobre reducers, services, componentes de chat, comandos, captura, badges e relatório de performance.
 
 ## Performance
@@ -244,9 +246,9 @@ A suíte usa Jest com `jest-expo` e React Native Testing Library. A cobertura gl
 
 Na última validação local:
 
-- 18 suítes passaram.
-- 75 testes passaram.
-- Cobertura global: 99.04% statements, 91.54% branches, 100% functions e 99% lines.
+- 19 suítes passaram.
+- 83 testes passaram.
+- Cobertura global: 99.24% statements, 94.88% branches, 100% functions e 99.21% lines.
 
 ## Limitações conhecidas
 
@@ -256,17 +258,3 @@ Na última validação local:
 - Notificações locais em background não foram implementadas porque são requisito opcional.
 - O JS heap depende de suporte do runtime a `performance.memory`; quando indisponível, o relatório informa essa limitação.
 
-## Vídeo de demonstração
-
-O desafio exige um vídeo de 1 a 3 minutos. O vídeo deve mostrar:
-
-- seleção de perfil;
-- pareamento por código;
-- chat em tempo real;
-- solicitação de captura pelo Atendente;
-- envio automático da captura da tela do app pelo Cliente;
-- visualização da captura recebida no visualizador dedicado;
-- envio de comandos;
-- WebView in-app;
-- relatório de performance no console ao encerrar a sessão;
-- execução de `npm run test:coverage` mostrando cobertura acima de 90%.
