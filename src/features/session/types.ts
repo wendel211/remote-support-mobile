@@ -10,5 +10,7 @@ export interface Session {
   clientConnected: boolean;
   attendantOnline?: boolean;
   clientOnline?: boolean;
+  attendantLastSeenAt?: number;
+  clientLastSeenAt?: number;
   createdAt: number;
 }

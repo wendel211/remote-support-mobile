@@ -16,6 +16,7 @@ import {
   joinSession,
   listenToSession,
   registerAttendantPresence,
+  updateParticipantPresence,
   updateSessionStatus,
 } from './sessionService';
 
@@ -54,6 +55,7 @@ describe('sessionService', () => {
       clientConnected: false,
       attendantOnline: true,
       clientOnline: false,
+      attendantLastSeenAt: 1000,
       createdAt: 1000,
     });
   });
@@ -87,6 +89,7 @@ describe('sessionService', () => {
     expect(mockUpdate).toHaveBeenCalledWith(expect.anything(), {
       attendantConnected: true,
       attendantOnline: true,
+      attendantLastSeenAt: 1000,
     });
     expect(mockOnDisconnectUpdate).toHaveBeenCalledWith({
       attendantOnline: false,
@@ -108,6 +111,7 @@ describe('sessionService', () => {
     expect(mockUpdate).toHaveBeenCalledWith(expect.anything(), {
       clientConnected: true,
       clientOnline: true,
+      clientLastSeenAt: 1000,
       status: 'connected',
     });
     expect(mockOnDisconnectUpdate).toHaveBeenCalledWith({
@@ -117,9 +121,25 @@ describe('sessionService', () => {
       status: 'connected',
       attendantConnected: true,
       clientConnected: true,
+      clientOnline: true,
+      clientLastSeenAt: 1000,
       createdAt: 1,
       code: 'ABC123',
       role: null,
+    });
+  });
+
+  it('refreshes participant heartbeat presence', async () => {
+    await updateParticipantPresence('ABC123', 'client');
+    await updateParticipantPresence('ABC123', 'attendant');
+
+    expect(mockUpdate).toHaveBeenNthCalledWith(1, expect.anything(), {
+      clientOnline: true,
+      clientLastSeenAt: 1000,
+    });
+    expect(mockUpdate).toHaveBeenNthCalledWith(2, expect.anything(), {
+      attendantOnline: true,
+      attendantLastSeenAt: 1000,
     });
   });
 

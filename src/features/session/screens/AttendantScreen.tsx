@@ -24,6 +24,7 @@ import {
   registerAttendantPresence,
   listenToSession,
   endSession,
+  updateParticipantPresence,
 } from '@features/session/services';
 import {
   setRole,
@@ -60,6 +61,8 @@ import { usePerformanceMonitor, useRenderMetric } from '@features/performance';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Attendant'>;
 type AttendantTab = 'controls' | 'chat';
+const PRESENCE_HEARTBEAT_MS = 5000;
+const CLIENT_PRESENCE_STALE_MS = 12000;
 
 export function AttendantScreen({ navigation }: Props): React.JSX.Element {
   const dispatch = useAppDispatch();
@@ -77,6 +80,7 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
   const [unreadClientMessages, setUnreadClientMessages] = useState(0);
   const [copiedCode, setCopiedCode] = useState(false);
   const [previewScreenshot, setPreviewScreenshot] = useState<string | null>(null);
+  const [presenceNow, setPresenceNow] = useState(() => Date.now());
   const unsubscribeRef = useRef<(() => void) | null>(null);
   const prevStatusRef = useRef<SessionStatus>('idle');
   const currentStatusRef = useRef<SessionStatus>('idle');
@@ -101,8 +105,14 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
   );
   const isOffline =
     netInfo.isConnected === false || netInfo.isInternetReachable === false;
+  const isClientPresenceStale =
+    currentStatus === 'connected' &&
+    typeof currentSession?.clientLastSeenAt === 'number' &&
+    presenceNow - currentSession.clientLastSeenAt > CLIENT_PRESENCE_STALE_MS;
   const isWaitingForConnection =
-    isOffline || (currentStatus === 'connected' && currentSession?.clientOnline === false);
+    isOffline ||
+    (currentStatus === 'connected' &&
+      (currentSession?.clientOnline === false || isClientPresenceStale));
 
   const tabContainerWidth = Math.max(width - 32, 280);
   const tabIndicatorWidth = (tabContainerWidth - 8) / 2;
@@ -203,6 +213,39 @@ export function AttendantScreen({ navigation }: Props): React.JSX.Element {
       setPreviewScreenshot(lastScreenshot);
     }
   }, [lastScreenshot]);
+
+  useEffect(() => {
+    if (currentStatus !== 'connected') {
+      return undefined;
+    }
+
+    const intervalId = setInterval(() => {
+      setPresenceNow(Date.now());
+    }, 3000);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [currentStatus]);
+
+  useEffect(() => {
+    if (!sessionCode || currentStatus === 'idle' || currentStatus === 'ended' || isOffline) {
+      return undefined;
+    }
+
+    const refreshPresence = () => {
+      void updateParticipantPresence(sessionCode, 'attendant').catch(() => {
+        // Offline warnings are already hidden by LogBox; the next heartbeat retries.
+      });
+    };
+
+    refreshPresence();
+    const intervalId = setInterval(refreshPresence, PRESENCE_HEARTBEAT_MS);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [currentStatus, isOffline, sessionCode]);
 
   const { finishPerformanceReport } = usePerformanceMonitor(
     currentStatus === 'connected' ? sessionCode : '',

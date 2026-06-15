@@ -48,6 +48,7 @@ export async function createSession(code: string): Promise<void> {
     clientConnected: false,
     attendantOnline: true,
     clientOnline: false,
+    attendantLastSeenAt: Date.now(),
     createdAt: Date.now(),
   };
 
@@ -65,6 +66,7 @@ export async function registerAttendantPresence(code: string): Promise<void> {
     await update(sessionRef, {
       attendantConnected: true,
       attendantOnline: true,
+      attendantLastSeenAt: Date.now(),
     });
     await onDisconnect(sessionRef).update({
       attendantOnline: false,
@@ -98,6 +100,7 @@ export async function joinSession(code: string): Promise<Session> {
     await update(sessionRef, {
       clientConnected: true,
       clientOnline: true,
+      clientLastSeenAt: Date.now(),
       status: 'connected',
     });
     await onDisconnect(sessionRef).update({
@@ -112,8 +115,27 @@ export async function joinSession(code: string): Promise<Session> {
     code,
     role: null,
     clientConnected: true,
+    clientOnline: true,
+    clientLastSeenAt: Date.now(),
     status: 'connected',
   };
+}
+
+export async function updateParticipantPresence(
+  code: string,
+  role: 'attendant' | 'client',
+): Promise<void> {
+  const sessionRef = ref(database, `sessions/${code}`);
+  const updates =
+    role === 'attendant'
+      ? { attendantOnline: true, attendantLastSeenAt: Date.now() }
+      : { clientOnline: true, clientLastSeenAt: Date.now() };
+
+  try {
+    await update(sessionRef, updates);
+  } catch (err: unknown) {
+    throw normalizeFirebaseError(err, 'Erro ao atualizar a presenÃ§a.');
+  }
 }
 
 export async function updateSessionStatus(

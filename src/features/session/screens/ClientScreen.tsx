@@ -19,6 +19,7 @@ import {
   joinSession,
   listenToSession,
   endSession,
+  updateParticipantPresence,
 } from '@features/session/services';
 import {
   setRole,
@@ -52,6 +53,7 @@ import {
 } from '@shared/ui';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Client'>;
+const PRESENCE_HEARTBEAT_MS = 5000;
 
 export function ClientScreen({ navigation }: Props): React.JSX.Element {
   const dispatch = useAppDispatch();
@@ -245,6 +247,25 @@ export function ClientScreen({ navigation }: Props): React.JSX.Element {
       unsubscribeCommands();
     };
   }, [connectedCode, dispatch, navigation]);
+
+  useEffect(() => {
+    if (!isConnected || !connectedCode || isOffline) {
+      return undefined;
+    }
+
+    const refreshPresence = () => {
+      void updateParticipantPresence(connectedCode, 'client').catch(() => {
+        // Offline warnings are already hidden by LogBox; the next heartbeat retries.
+      });
+    };
+
+    refreshPresence();
+    const intervalId = setInterval(refreshPresence, PRESENCE_HEARTBEAT_MS);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [connectedCode, isConnected, isOffline]);
 
   const handleLeaveSession = useCallback(async () => {
     if (connectedCode) {

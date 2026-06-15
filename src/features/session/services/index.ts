@@ -4,6 +4,7 @@ export {
   registerAttendantPresence,
   joinSession,
   updateSessionStatus,
+  updateParticipantPresence,
   listenToSession,
   endSession,
 } from './sessionService';
